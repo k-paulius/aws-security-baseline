@@ -111,7 +111,7 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       Name: 'org-sec-alerts-root-signin-rule'
-      Description: 'Listens for root user AWS console sign-in events'
+      Description: 'Listens for root user events from the "signin" event source'
       EventBusName: !GetAtt rOrgSecEventBus.Arn
       State: ENABLED
       EventPattern:
@@ -144,8 +144,9 @@ Resources:
               sourceIPAddress: $.detail.sourceIPAddress
               userAgent: $.detail.userAgent
               userIdentityType: $.detail.userIdentity.type
+              response: $.detail.responseElements[*]
             InputTemplate: |
-              "Alert: <userIdentityType> <eventName> Detected"
+              "----- ALERT | USER: <userIdentityType> | EVENT: <eventName> | RESPONSE: <response> -----"
 
               "Account Id: <accountId>"
               "ARN: <arn>"

@@ -10,7 +10,8 @@ Forwarding rules can be deployed organization-wide across all regions or selecti
 
 Currently monitored and alerted activities:
 
-- Root user console sign-in
+- Root user console sign in attempts: successes and failures (`ConsoleLogin`)
+- Root user password recovery (`PasswordRecoveryRequested`, `PasswordRecoveryCompleted`)
 
 
 ## Deployment

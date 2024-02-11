@@ -20,7 +20,7 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       Name: 'org-sec-alerts-root-signin-fwd-rule'
-      Description: 'Forwards root user AWS console sign-in events to the central event bus'
+      Description: 'Forwards root user events from the "signin" event source to the central event bus'
       EventBusName: default
       State: ENABLED
       EventPattern:
