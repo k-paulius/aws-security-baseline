@@ -1,0 +1,168 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Organization wide security event bus and alerts'
+
+Parameters:
+
+  pProjectName:
+    Description: Project Name (value used in the 'project' tag)
+    Type: String
+    Default: 'org-sec-alerts'
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Project name value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOrgID:
+    Description: AWS Organization ID (e.g., o-abc1234567)
+    Type: String
+    AllowedPattern: '^o-[a-zA-Z0-9]{10}$'
+    ConstraintDescription: Must be a valid AWS Organization ID (e.g., o-abc1234567)
+
+  pCriticalAlertEmail:
+    Description: Organization-wide critical security alerts email address
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+    ConstraintDescription: Must be a valid email address
+
+Resources:
+
+  rOrgSecEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: 'org-sec-event-bus'
+      Tags:
+        - Key: 'project'
+          Value: !Ref pProjectName
+
+  rOrgSecEventBusPolicy:
+    Type: AWS::Events::EventBusPolicy
+    Properties:
+      EventBusName: !Ref rOrgSecEventBus
+      StatementId: 'AllowOrgMemberAccountsToPutEvents'
+      Statement:
+        Effect: 'Allow'
+        Principal: '*'
+        Action: 'events:PutEvents'
+        Resource: !GetAtt rOrgSecEventBus.Arn
+        Condition:
+          StringEquals:
+            'aws:PrincipalOrgID': !Ref pOrgID
+
+  rCriticalOrgSecAlertSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: 'org-sec-alerts-critical'
+      # DisplayName is used as "from" name in the email
+      DisplayName: 'Critical Security Alerts'
+      Tags:
+        - Key: 'project'
+          Value: !Ref pProjectName
+
+  rCriticalOrgSecAlertSNSTopicPolicy:
+    Type: AWS::SNS::TopicInlinePolicy
+    Properties:
+      TopicArn: !Ref rCriticalOrgSecAlertSNSTopic
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action:
+              - sns:Publish
+            Resource: !Ref rCriticalOrgSecAlertSNSTopic
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-signin-rule'
+
+  rCriticalOrgSecAlertSNSTopicSub:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !Ref pCriticalAlertEmail
+      Protocol: email
+      TopicArn: !Ref rCriticalOrgSecAlertSNSTopic
+
+  rOrgSecAlertsDLQQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: 'org-sec-alerts-dlq'
+      MessageRetentionPeriod: 604800
+      SqsManagedSseEnabled: true
+      Tags:
+        - Key: 'project'
+          Value: !Ref pProjectName
+
+  rOrgSecAlertsDLQQueuePolicy:
+    Type: AWS::SQS::QueueInlinePolicy
+    Properties:
+      Queue: !Ref rOrgSecAlertsDLQQueue
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt rOrgSecAlertsDLQQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-signin-rule'
+
+  rOrgSecAlertsRootSigninRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: 'org-sec-alerts-root-signin-rule'
+      Description: 'Listens for root user AWS console sign-in events'
+      EventBusName: !GetAtt rOrgSecEventBus.Arn
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.signin'
+        detail-type:
+          - 'AWS Console Sign In via CloudTrail'
+        detail:
+          userIdentity:
+            type:
+              - 'Root'
+      Targets:
+        - Id: 'CriticalOrgSecAlertSNSTopic'
+          Arn: !Ref rCriticalOrgSecAlertSNSTopic
+          DeadLetterConfig:
+            Arn: !GetAtt rOrgSecAlertsDLQQueue.Arn
+          InputTransformer:
+            InputPathsMap:
+              LoginTo: $.detail.additionalEventData.LoginTo
+              MFAUsed: $.detail.additionalEventData.MFAUsed
+              MobileVersion: $.detail.additionalEventData.MobileVersion
+              accountId: $.detail.userIdentity.accountId
+              arn: $.detail.userIdentity.arn
+              awsRegion: $.detail.awsRegion
+              eventID: $.detail.eventID
+              eventName: $.detail.eventName
+              eventTime: $.detail.eventTime
+              message: $
+              principalId: $.detail.userIdentity.principalId
+              sourceIPAddress: $.detail.sourceIPAddress
+              userAgent: $.detail.userAgent
+              userIdentityType: $.detail.userIdentity.type
+            InputTemplate: |
+              "Alert: <userIdentityType> <eventName> Detected"
+
+              "Account Id: <accountId>"
+              "ARN: <arn>"
+              "Principal Id: <principalId>"
+              "Event Time: <eventTime>"
+              "Region: <awsRegion>"
+              "IP Address: <sourceIPAddress>"
+              "User Agent: <userAgent>"
+              "MFA Used: <MFAUsed>"
+              "Mobile Version: <MobileVersion>"
+              "CloudTrail Event ID: <eventID>"
+              "URL: <LoginTo>"
+
+              "Event: <message>"
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

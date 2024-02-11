@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'StackSet of the "org-sec-alerts-event-fwding" template'
+
+Parameters:
+
+  pProjectName:
+    Description: Project Name (value used in the 'project' tag)
+    Type: String
+    Default: 'org-sec-alerts'
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Project name value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOrgSecEventBus:
+    Description: Organization wide security alert event bus ARN
+    Type: String
+
+  pDeployTargetOrgUnitId:
+    Description: 'The organization root ID or organizational unit (OU) IDs to which stacks deploy.'
+    Type: String
+    AllowedPattern: '^(ou-[a-z0-9]{4,32}-[a-z0-9]{8,32}|r-[a-z0-9]{4,32})$'
+
+  pTemplateURL:
+    Description: 'S3 URL where the CloudFormation template to be deployed is stored'
+    Type: 'String'
+    Default: 'https://s3.us-east-1.amazonaws.com/bucket-name/template.yaml'
+
+Resources:
+
+  rStackSet:
+    Type: AWS::CloudFormation::StackSet
+    Properties:
+      StackSetName: 'org-sec-alerts-event-fwding'
+      Description: 'Organizational StackSet to deploy security alert forwarding to the central event bus'
+      PermissionModel: SERVICE_MANAGED
+      CallAs: DELEGATED_ADMIN
+      AutoDeployment:
+        Enabled: true
+        RetainStacksOnAccountRemoval: true
+      Capabilities:
+        - CAPABILITY_NAMED_IAM
+      ManagedExecution:
+        Active: true
+      OperationPreferences:
+        FailureTolerancePercentage: 100
+        MaxConcurrentPercentage: 100
+        RegionConcurrencyType: 'SEQUENTIAL'
+        RegionOrder:
+          - us-east-1
+      Parameters:
+        - ParameterKey: pProjectName
+          ParameterValue: !Ref pProjectName
+        - ParameterKey: pOrgSecEventBus
+          ParameterValue: !Ref pOrgSecEventBus
+      StackInstancesGroup:
+        - DeploymentTargets:
+            OrganizationalUnitIds:
+              - !Ref pDeployTargetOrgUnitId
+          Regions:
+            - us-east-1
+      TemplateURL: !Ref pTemplateURL
+      Tags:
+        - Key: 'project'
+          Value: !Ref pProjectName
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

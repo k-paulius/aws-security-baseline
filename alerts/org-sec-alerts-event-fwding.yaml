@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Security alert forwarding to the central event bus'
+
+Parameters:
+
+  pProjectName:
+    Description: Project Name (value used in the 'project' tag)
+    Type: String
+    Default: 'org-sec-alerts'
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Project name value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOrgSecEventBus:
+    Description: Organization wide security alert event bus ARN
+    Type: String
+
+Resources:
+
+  rOrgSecAlertsRootSigninFwdRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: 'org-sec-alerts-root-signin-fwd-rule'
+      Description: 'Forwards root user AWS console sign-in events to the central event bus'
+      EventBusName: default
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.signin'
+        detail-type:
+          - 'AWS Console Sign In via CloudTrail'
+        detail:
+          userIdentity:
+            type:
+              - 'Root'
+      Targets:
+        - Id: 'rOrgSecEventBus'
+          Arn: !Ref pOrgSecEventBus
+          RoleArn: !GetAtt rOrgSecAlertsRootSigninFwdRuleRole.Arn
+
+  rOrgSecAlertsRootSigninFwdRuleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "org-sec-alerts-root-signin-fwd-rule-role"
+      Description: "org-sec-alerts-root-signin-fwd-rule execution role"
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-root-signin-fwd-rule'
+      Policies:
+        - PolicyName: put-events
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'events:PutEvents'
+                Resource:
+                  - !Ref pOrgSecEventBus
+      Tags:
+        - Key: 'project'
+          Value: !Ref pProjectName
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
