@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: 'Deploys S3 bucket for storing CloudFormation templates'
+Description: 'CloudFormation template storage bucket'
 
 Parameters:
 
