@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Deploys S3 bucket for storing CloudFormation templates'
+
+Parameters:
+
+  pBucketNameSuffix:
+    Description: 'Unique 16 character value that will be appended to the bucket name. Accepted values: lower case letters and numbers.'
+    Type: String
+    AllowedPattern: '^[a-z0-9]{16}$'
+    ConstraintDescription: 'Input parameter pBucketNameSuffix must only contain lowercase letters and numbers and be 16 characters long.'
+    MinLength: 16
+
+Resources:
+
+  rCFTemplateBucket:
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'aws-cf-templates-${pBucketNameSuffix}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
+
+  oCFTemplateBucketArn:
+    Description: 'ARN of the AWS CloudFormation template storage bucket'
+    Value: !GetAtt 'rCFTemplateBucket.Arn'
