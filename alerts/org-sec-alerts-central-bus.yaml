@@ -150,7 +150,6 @@ Resources:
               eventID: $.detail.eventID
               eventName: $.detail.eventName
               eventTime: $.detail.eventTime
-              message: $
               principalId: $.detail.userIdentity.principalId
               sourceIPAddress: $.detail.sourceIPAddress
               userAgent: $.detail.userAgent
@@ -170,8 +169,6 @@ Resources:
               "Mobile Version: <MobileVersion>"
               "CloudTrail Event ID: <eventID>"
               "URL: <LoginTo>"
-
-              "Event: <message>"
 
   rOrgSecAlertsRootIAMRule:
     Type: AWS::Events::Rule
@@ -219,7 +216,6 @@ Resources:
               eventID: $.detail.eventID
               eventName: $.detail.eventName
               eventTime: $.detail.eventTime
-              message: $
               principalId: $.detail.userIdentity.principalId
               sourceIPAddress: $.detail.sourceIPAddress
               userAgent: $.detail.userAgent
@@ -235,8 +231,6 @@ Resources:
               "IP Address: <sourceIPAddress>"
               "User Agent: <userAgent>"
               "CloudTrail Event ID: <eventID>"
-
-              "Event: <message>"
 
   rOrgSecAlertsRootSTSRule:
     Type: AWS::Events::Rule
@@ -270,7 +264,6 @@ Resources:
               eventID: $.detail.eventID
               eventName: $.detail.eventName
               eventTime: $.detail.eventTime
-              message: $
               principalId: $.detail.userIdentity.principalId
               sourceIPAddress: $.detail.sourceIPAddress
               userAgent: $.detail.userAgent
@@ -286,8 +279,6 @@ Resources:
               "IP Address: <sourceIPAddress>"
               "User Agent: <userAgent>"
               "CloudTrail Event ID: <eventID>"
-
-              "Event: <message>"
 
 Outputs:
 
