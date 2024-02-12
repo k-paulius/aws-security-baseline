@@ -35,13 +35,51 @@ Resources:
       Targets:
         - Id: 'rOrgSecEventBus'
           Arn: !Ref pOrgSecEventBus
-          RoleArn: !GetAtt rOrgSecAlertsRootSigninFwdRuleRole.Arn
+          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
 
-  rOrgSecAlertsRootSigninFwdRuleRole:
+  rOrgSecAlertsRootIAMFwdRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: 'org-sec-alerts-root-iam-fwd-rule'
+      Description: 'Forwards root user events from the "iam" event source to the central event bus'
+      EventBusName: default
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.iam'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          userIdentity:
+            type:
+              - 'Root'
+          eventName:
+            - 'CreateAccessKey'
+            - 'UpdateAccessKey'
+            - 'DeleteAccessKey'
+            - 'UploadCloudFrontPublicKey'
+            - 'UpdateCloudFrontPublicKey'
+            - 'DeleteCloudFrontPublicKey'
+            - 'UploadSigningCertificate'
+            - 'UpdateSigningCertificate'
+            - 'DeleteSigningCertificate'
+            - 'CreateVirtualMFADevice'
+            - 'DeleteVirtualMFADevice'
+            - 'DeactivateMFADevice'
+            - 'EnableMFADevice'
+            - 'ResyncMFADevice'
+            - 'ChangePassword'
+            - 'UpdateAccountEmailAddress'
+      Targets:
+        - Id: 'rOrgSecEventBus'
+          Arn: !Ref pOrgSecEventBus
+          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+
+  rOrgSecAlertsEventFwdRuleRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: "org-sec-alerts-root-signin-fwd-rule-role"
-      Description: "org-sec-alerts-root-signin-fwd-rule execution role"
+      RoleName: 'org-sec-alerts-event-fwd-rule-role'
+      Description: 'Execution role for "org-sec-alerts" event forwarding rules'
       Path: /
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -52,7 +90,9 @@ Resources:
             Action: sts:AssumeRole
             Condition:
               ArnEquals:
-                aws:SourceArn: !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-root-signin-fwd-rule'
+                aws:SourceArn:
+                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-root-signin-fwd-rule'
+                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-root-iam-fwd-rule'
       Policies:
         - PolicyName: put-events
           PolicyDocument:

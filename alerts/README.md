@@ -12,6 +12,13 @@ Currently monitored and alerted activities:
 
 - Root user console sign in attempts: successes and failures (`ConsoleLogin`)
 - Root user password recovery (`PasswordRecoveryRequested`, `PasswordRecoveryCompleted`)
+- Root user access key creation, deletion, updates (`CreateAccessKey`, `DeleteAccessKey`, `UpdateAccessKey`)
+- Root user MFA device actions (`CreateVirtualMFADevice`, `DeleteVirtualMFADevice`, `DeactivateMFADevice`, `EnableMFADevice`, `ResyncMFADevice`)
+- Root user (account) email change ((`UpdateAccountEmailAddress`, `EmailUpdated`)
+- Root user password change `ChangePassword`, `PasswordUpdated`)
+- Root user CloudFront key pair creation, deletion, updates (`UploadCloudFrontPublicKey`, `DeleteCloudFrontPublicKey`, `UpdateCloudFrontPublicKey`)
+- Root user X.509 Signing certificate creation, deletion, updates (`UploadSigningCertificate`, `DeleteSigningCertificate`, `UpdateSigningCertificate`)
+
 
 
 ## Deployment
@@ -60,10 +67,12 @@ aws cloudformation deploy \
   - org-sec-alerts-critical                     - critical alert SNS topic
   - org-sec-alerts-dlq                          - DLQ SQS queue
   - org-sec-alerts-root-signin-rule             - EventBridge Rule
+  - org-sec-alerts-root-iam-rule                - EventBridge Rule
 
 - `org-sec-alerts-event-fwding.yaml` deploys:
   - org-sec-alerts-root-signin-fwd-rule         - EventBridge Rule
-  - org-sec-alerts-root-signin-fwd-rule-role    - EventBridge Rule IAM execution role
+  - org-sec-alerts-root-iam-fwd-rule            - EventBridge Rule
+  - org-sec-alerts-event-fwd-rule-role          - EventBridge Rule IAM execution role
 
 - `org-sec-alerts-event-fwding-stackset.yaml` deploys:
   - org-sec-alerts-event-fwding-stackset        - StackSet
