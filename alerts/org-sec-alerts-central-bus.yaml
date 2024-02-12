@@ -155,18 +155,23 @@ Resources:
               userAgent: $.detail.userAgent
               userIdentityType: $.detail.userIdentity.type
               response: $.detail.responseElements[*]
+              accessKeyId: $.detail.userIdentity.accessKeyId
+              eventSource: $.detail.eventSource
+
             InputTemplate: |
-              "----- ALERT | USER: <userIdentityType> | EVENT: <eventName> | RESPONSE: <response> -----"
+              "----- ALERT | USER: <userIdentityType> | EVENT: signin:<eventName> | RESPONSE: <response> -----"
 
               "Account Id: <accountId>"
               "ARN: <arn>"
               "Principal Id: <principalId>"
+              "Access Key Id: <accessKeyId>"
               "Event Time: <eventTime>"
               "Region: <awsRegion>"
               "IP Address: <sourceIPAddress>"
               "User Agent: <userAgent>"
               "MFA Used: <MFAUsed>"
               "Mobile Version: <MobileVersion>"
+              "Event Source: <eventSource>"
               "CloudTrail Event ID: <eventID>"
               "URL: <LoginTo>"
 
@@ -220,16 +225,20 @@ Resources:
               sourceIPAddress: $.detail.sourceIPAddress
               userAgent: $.detail.userAgent
               userIdentityType: $.detail.userIdentity.type
+              accessKeyId: $.detail.userIdentity.accessKeyId
+              eventSource: $.detail.eventSource
             InputTemplate: |
-              "----- ALERT | USER: <userIdentityType> | EVENT: <eventName> -----"
+              "----- ALERT | USER: <userIdentityType> | EVENT: iam:<eventName> -----"
 
               "Account Id: <accountId>"
               "ARN: <arn>"
               "Principal Id: <principalId>"
+              "Access Key Id: <accessKeyId>"
               "Event Time: <eventTime>"
               "Region: <awsRegion>"
               "IP Address: <sourceIPAddress>"
               "User Agent: <userAgent>"
+              "Event Source: <eventSource>"
               "CloudTrail Event ID: <eventID>"
 
   rOrgSecAlertsRootSTSRule:
@@ -268,16 +277,20 @@ Resources:
               sourceIPAddress: $.detail.sourceIPAddress
               userAgent: $.detail.userAgent
               userIdentityType: $.detail.userIdentity.type
+              accessKeyId: $.detail.userIdentity.accessKeyId
+              eventSource: $.detail.eventSource
             InputTemplate: |
-              "----- ALERT | USER: <userIdentityType> | EVENT: <eventName> -----"
+              "----- ALERT | USER: <userIdentityType> | EVENT: sts:<eventName> -----"
 
               "Account Id: <accountId>"
               "ARN: <arn>"
               "Principal Id: <principalId>"
+              "Access Key Id: <accessKeyId>"
               "Event Time: <eventTime>"
               "Region: <awsRegion>"
               "IP Address: <sourceIPAddress>"
               "User Agent: <userAgent>"
+              "Event Source: <eventSource>"
               "CloudTrail Event ID: <eventID>"
 
 Outputs:
