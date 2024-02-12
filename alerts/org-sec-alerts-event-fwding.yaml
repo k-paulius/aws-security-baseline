@@ -22,7 +22,7 @@ Resources:
       Name: 'org-sec-alerts-root-signin-fwd-rule'
       Description: 'Forwards root user events from the "signin" event source to the central event bus'
       EventBusName: default
-      State: ENABLED
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
       EventPattern:
         source:
           - 'aws.signin'
@@ -30,8 +30,13 @@ Resources:
           - 'AWS Console Sign In via CloudTrail'
         detail:
           userIdentity:
-            type:
-              - 'Root'
+            $or:
+              - type:
+                  - 'Root'
+              - sessionContext:
+                  sessionIssuer:
+                    type:
+                      - 'Root'
       Targets:
         - Id: 'rOrgSecEventBus'
           Arn: !Ref pOrgSecEventBus
@@ -75,6 +80,30 @@ Resources:
           Arn: !Ref pOrgSecEventBus
           RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
 
+  rOrgSecAlertsRootSTSFwdRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: 'org-sec-alerts-root-sts-fwd-rule'
+      Description: 'Forwards root user events from the "sts" event source to the central event bus'
+      EventBusName: default
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.sts'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          userIdentity:
+            type:
+              - 'Root'
+          eventName:
+            - 'GetFederationToken'
+            - 'GetSessionToken'
+      Targets:
+        - Id: 'rOrgSecEventBus'
+          Arn: !Ref pOrgSecEventBus
+          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+
   rOrgSecAlertsEventFwdRuleRole:
     Type: AWS::IAM::Role
     Properties:
@@ -93,6 +122,7 @@ Resources:
                 aws:SourceArn:
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-root-signin-fwd-rule'
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-root-iam-fwd-rule'
+                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-root-sts-fwd-rule'
       Policies:
         - PolicyName: put-events
           PolicyDocument:
@@ -111,4 +141,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.0'
+    Value: '1.0.1'

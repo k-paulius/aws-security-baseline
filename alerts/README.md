@@ -10,16 +10,42 @@ Forwarding rules can be deployed organization-wide across all regions or selecti
 
 Currently monitored and alerted activities:
 
-- Root user console sign in attempts: successes and failures (`ConsoleLogin`)
-- Root user password recovery (`PasswordRecoveryRequested`, `PasswordRecoveryCompleted`)
-- Root user access key creation, deletion, updates (`CreateAccessKey`, `DeleteAccessKey`, `UpdateAccessKey`)
-- Root user MFA device actions (`CreateVirtualMFADevice`, `DeleteVirtualMFADevice`, `DeactivateMFADevice`, `EnableMFADevice`, `ResyncMFADevice`)
-- Root user (account) email change ((`UpdateAccountEmailAddress`, `EmailUpdated`)
-- Root user password change `ChangePassword`, `PasswordUpdated`)
-- Root user CloudFront key pair creation, deletion, updates (`UploadCloudFrontPublicKey`, `DeleteCloudFrontPublicKey`, `UpdateCloudFrontPublicKey`)
-- Root user X.509 Signing certificate creation, deletion, updates (`UploadSigningCertificate`, `DeleteSigningCertificate`, `UpdateSigningCertificate`)
-
-
+- Root user console sign in attempts: successes and failures
+  - `signin:ConsoleLogin`
+- Root user federated console session (sign in)
+  - `sts:GetFederationToken`
+  - `signin:GetSigninToken`
+  - `signin:ConsoleSignin`
+- Root user password recovery
+  - `signin:PasswordRecoveryRequested`
+  - `signin:PasswordRecoveryCompleted`
+- Root user access key creation, deletion, updates
+  - `iam:CreateAccessKey`
+  - `iam:DeleteAccessKey`
+  - `iam:UpdateAccessKey`
+- Root user temporary security credential creation
+  - `sts:GetSessionToken`
+  - `sts:GetFederationToken`
+- Root user MFA device actions
+  - `iam:CreateVirtualMFADevice`
+  - `iam:DeleteVirtualMFADevice`
+  - `iam:DeactivateMFADevice`
+  - `iam:EnableMFADevice`
+  - `iam:ResyncMFADevice`
+- Root user (account) email change
+  - `iam:UpdateAccountEmailAddress`
+  - `signin:EmailUpdated`
+- Root user password change
+  - `iam:ChangePassword`
+  - `signin:PasswordUpdated`
+- Root user CloudFront key pair creation, deletion, updates
+  - `iam:UploadCloudFrontPublicKey`
+  - `iam:DeleteCloudFrontPublicKey`
+  - `iam:UpdateCloudFrontPublicKey`
+- Root user X.509 Signing certificate creation, deletion, updates
+  - `iam:UploadSigningCertificate`
+  - `iam:DeleteSigningCertificate`
+  - `iam:UpdateSigningCertificate`
 
 ## Deployment
 

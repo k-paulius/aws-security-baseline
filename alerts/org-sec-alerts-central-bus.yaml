@@ -74,6 +74,7 @@ Resources:
                 aws:SourceArn:
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-signin-rule'
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-iam-rule'
+                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-sts-rule'
 
   rCriticalOrgSecAlertSNSTopicSub:
     Type: AWS::SNS::Subscription
@@ -110,6 +111,7 @@ Resources:
                 aws:SourceArn:
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-signin-rule'
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-iam-rule'
+                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-sts-rule'
 
   rOrgSecAlertsRootSigninRule:
     Type: AWS::Events::Rule
@@ -117,7 +119,7 @@ Resources:
       Name: 'org-sec-alerts-root-signin-rule'
       Description: 'Listens for root user events from the "signin" event source'
       EventBusName: !GetAtt rOrgSecEventBus.Arn
-      State: ENABLED
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
       EventPattern:
         source:
           - 'aws.signin'
@@ -125,8 +127,13 @@ Resources:
           - 'AWS Console Sign In via CloudTrail'
         detail:
           userIdentity:
-            type:
-              - 'Root'
+            $or:
+              - type:
+                  - 'Root'
+              - sessionContext:
+                  sessionIssuer:
+                    type:
+                      - 'Root'
       Targets:
         - Id: 'CriticalOrgSecAlertSNSTopic'
           Arn: !Ref rCriticalOrgSecAlertSNSTopic
@@ -231,8 +238,59 @@ Resources:
 
               "Event: <message>"
 
+  rOrgSecAlertsRootSTSRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: 'org-sec-alerts-root-sts-rule'
+      Description: 'Listens for root user events from the "sts" event source'
+      EventBusName: !GetAtt rOrgSecEventBus.Arn
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.sts'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          userIdentity:
+            type:
+              - 'Root'
+          eventName:
+            - 'GetFederationToken'
+            - 'GetSessionToken'
+      Targets:
+        - Id: 'CriticalOrgSecAlertSNSTopic'
+          Arn: !Ref rCriticalOrgSecAlertSNSTopic
+          DeadLetterConfig:
+            Arn: !GetAtt rOrgSecAlertsDLQQueue.Arn
+          InputTransformer:
+            InputPathsMap:
+              accountId: $.detail.userIdentity.accountId
+              arn: $.detail.userIdentity.arn
+              awsRegion: $.detail.awsRegion
+              eventID: $.detail.eventID
+              eventName: $.detail.eventName
+              eventTime: $.detail.eventTime
+              message: $
+              principalId: $.detail.userIdentity.principalId
+              sourceIPAddress: $.detail.sourceIPAddress
+              userAgent: $.detail.userAgent
+              userIdentityType: $.detail.userIdentity.type
+            InputTemplate: |
+              "----- ALERT | USER: <userIdentityType> | EVENT: <eventName> -----"
+
+              "Account Id: <accountId>"
+              "ARN: <arn>"
+              "Principal Id: <principalId>"
+              "Event Time: <eventTime>"
+              "Region: <awsRegion>"
+              "IP Address: <sourceIPAddress>"
+              "User Agent: <userAgent>"
+              "CloudTrail Event ID: <eventID>"
+
+              "Event: <message>"
+
 Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.0'
+    Value: '1.0.1'
