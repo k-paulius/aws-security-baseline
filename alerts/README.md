@@ -2,7 +2,7 @@
 
 ## Description
 
-This project deploys a centralized security alerting solution using a hub-and-spoke pattern. It sets up a custom EventBridge event bus, alert rules, and an SNS topic in the hub account. EventBridge rules are then deployed to each spoke account to forward events to the central event bus in the hub account.
+This project deploys a simple centralized security alerting solution using a hub-and-spoke pattern. It sets up a custom EventBridge event bus, alert rules, and an SNS topic in the hub account. EventBridge rules are then deployed to each spoke account to forward events to the central event bus in the hub account.
 
 Forwarding rules can be deployed organization-wide across all regions or selectively to chosen accounts.
 
@@ -94,10 +94,12 @@ aws cloudformation deploy \
   - org-sec-alerts-dlq                          - DLQ SQS queue
   - org-sec-alerts-root-signin-rule             - EventBridge Rule
   - org-sec-alerts-root-iam-rule                - EventBridge Rule
+  - org-sec-alerts-root-sts-rule                - EventBridge Rule
 
 - `org-sec-alerts-event-fwding.yaml` deploys:
   - org-sec-alerts-root-signin-fwd-rule         - EventBridge Rule
   - org-sec-alerts-root-iam-fwd-rule            - EventBridge Rule
+  - org-sec-alerts-root-sts-fwd-rule            - EventBridge Rule
   - org-sec-alerts-event-fwd-rule-role          - EventBridge Rule IAM execution role
 
 - `org-sec-alerts-event-fwding-stackset.yaml` deploys:

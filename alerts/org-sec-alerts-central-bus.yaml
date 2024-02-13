@@ -134,6 +134,13 @@ Resources:
                   sessionIssuer:
                     type:
                       - 'Root'
+          eventName:
+            - 'ConsoleLogin'
+            - 'GetSigninToken'
+            - 'PasswordRecoveryRequested'
+            - 'PasswordRecoveryCompleted'
+            - 'EmailUpdated'
+            - 'PasswordUpdated'
       Targets:
         - Id: 'CriticalOrgSecAlertSNSTopic'
           Arn: !Ref rCriticalOrgSecAlertSNSTopic

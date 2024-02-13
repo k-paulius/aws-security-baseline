@@ -37,6 +37,13 @@ Resources:
                   sessionIssuer:
                     type:
                       - 'Root'
+          eventName:
+            - 'ConsoleLogin'
+            - 'GetSigninToken'
+            - 'PasswordRecoveryRequested'
+            - 'PasswordRecoveryCompleted'
+            - 'EmailUpdated'
+            - 'PasswordUpdated'
       Targets:
         - Id: 'rOrgSecEventBus'
           Arn: !Ref pOrgSecEventBus
