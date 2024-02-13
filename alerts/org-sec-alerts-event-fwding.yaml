@@ -111,6 +111,26 @@ Resources:
           Arn: !Ref pOrgSecEventBus
           RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
 
+  rOrgSecAlertsAccountFwdRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: 'org-sec-alerts-account-fwd-rule'
+      Description: 'Forwards events from the "account" event source to the central event bus'
+      EventBusName: default
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.account'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          eventName:
+            - 'PutContactInformation'
+      Targets:
+        - Id: 'rOrgSecEventBus'
+          Arn: !Ref pOrgSecEventBus
+          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+
   rOrgSecAlertsEventFwdRuleRole:
     Type: AWS::IAM::Role
     Properties:
@@ -130,6 +150,7 @@ Resources:
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-root-signin-fwd-rule'
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-root-iam-fwd-rule'
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-root-sts-fwd-rule'
+                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-account-fwd-rule'
       Policies:
         - PolicyName: put-events
           PolicyDocument:
@@ -148,4 +169,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.1'
+    Value: '1.0.2'

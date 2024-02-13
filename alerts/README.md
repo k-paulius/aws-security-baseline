@@ -46,6 +46,8 @@ Currently monitored and alerted activities:
   - `iam:UploadSigningCertificate`
   - `iam:DeleteSigningCertificate`
   - `iam:UpdateSigningCertificate`
+- Account contact information change: phone number, address, name
+  - `account:PutContactInformation`
 
 ## Deployment
 
@@ -95,11 +97,13 @@ aws cloudformation deploy \
   - org-sec-alerts-root-signin-rule             - EventBridge Rule
   - org-sec-alerts-root-iam-rule                - EventBridge Rule
   - org-sec-alerts-root-sts-rule                - EventBridge Rule
+  - org-sec-alerts-account-rule                 - EventBridge Rule
 
 - `org-sec-alerts-event-fwding.yaml` deploys:
   - org-sec-alerts-root-signin-fwd-rule         - EventBridge Rule
   - org-sec-alerts-root-iam-fwd-rule            - EventBridge Rule
   - org-sec-alerts-root-sts-fwd-rule            - EventBridge Rule
+  - org-sec-alerts-account-fwd-rule             - EventBridge Rule
   - org-sec-alerts-event-fwd-rule-role          - EventBridge Rule IAM execution role
 
 - `org-sec-alerts-event-fwding-stackset.yaml` deploys:

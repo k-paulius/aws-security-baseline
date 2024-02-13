@@ -75,6 +75,7 @@ Resources:
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-signin-rule'
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-iam-rule'
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-sts-rule'
+                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-account-rule'
 
   rCriticalOrgSecAlertSNSTopicSub:
     Type: AWS::SNS::Subscription
@@ -112,6 +113,7 @@ Resources:
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-signin-rule'
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-iam-rule'
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-sts-rule'
+                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-account-rule'
 
   rOrgSecAlertsRootSigninRule:
     Type: AWS::Events::Rule
@@ -300,8 +302,56 @@ Resources:
               "Event Source: <eventSource>"
               "CloudTrail Event ID: <eventID>"
 
+  rOrgSecAlertsAccountRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: 'org-sec-alerts-account-rule'
+      Description: 'Listens for events from the "account" event source'
+      EventBusName: !GetAtt rOrgSecEventBus.Arn
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.account'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          eventName:
+            - 'PutContactInformation'
+      Targets:
+        - Id: 'CriticalOrgSecAlertSNSTopic'
+          Arn: !Ref rCriticalOrgSecAlertSNSTopic
+          DeadLetterConfig:
+            Arn: !GetAtt rOrgSecAlertsDLQQueue.Arn
+          InputTransformer:
+            InputPathsMap:
+              accountId: $.detail.userIdentity.accountId
+              arn: $.detail.userIdentity.arn
+              awsRegion: $.detail.awsRegion
+              eventID: $.detail.eventID
+              eventName: $.detail.eventName
+              eventTime: $.detail.eventTime
+              principalId: $.detail.userIdentity.principalId
+              sourceIPAddress: $.detail.sourceIPAddress
+              userAgent: $.detail.userAgent
+              userIdentityType: $.detail.userIdentity.type
+              accessKeyId: $.detail.userIdentity.accessKeyId
+              eventSource: $.detail.eventSource
+            InputTemplate: |
+              "----- ALERT | USER: <userIdentityType> | EVENT: account:<eventName> -----"
+
+              "Account Id: <accountId>"
+              "ARN: <arn>"
+              "Principal Id: <principalId>"
+              "Access Key Id: <accessKeyId>"
+              "Event Time: <eventTime>"
+              "Region: <awsRegion>"
+              "IP Address: <sourceIPAddress>"
+              "User Agent: <userAgent>"
+              "Event Source: <eventSource>"
+              "CloudTrail Event ID: <eventID>"
+
 Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.1'
+    Value: '1.0.2'
