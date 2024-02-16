@@ -4,23 +4,36 @@ Description: 'Organization wide security event bus and alerts'
 Parameters:
 
   pProjectName:
-    Description: Project Name (value used in the 'project' tag)
+    Description: 'Project Name (value used in the "project" tag)'
     Type: String
     Default: 'org-sec-alerts'
     AllowedPattern: '[a-zA-Z0-9\-_]+'
     ConstraintDescription: 'Project name value must contain only alphanumeric characters, hyphens, and underscores'
 
   pOrgID:
-    Description: AWS Organization ID (e.g., o-abc1234567)
+    Description: 'AWS Organization ID (e.g., o-abc1234567)'
     Type: String
     AllowedPattern: '^o-[a-zA-Z0-9]{10}$'
-    ConstraintDescription: Must be a valid AWS Organization ID (e.g., o-abc1234567)
+    ConstraintDescription: 'Must be a valid AWS Organization ID (e.g., o-abc1234567)'
+
+  pDeployEmailAlerts:
+    Description: 'Deploy e-mail alerts? (When enabled, deploys an SNS topic subscribed to the specified email)'
+    Type: String
+    Default: 'no'
+    AllowedValues:
+         - 'yes'
+         - 'no'
 
   pCriticalAlertEmail:
-    Description: Organization-wide critical security alerts email address
+    Description: 'Organization-wide critical security alerts email address (Required if e-mail alerts are enabled)'
     Type: String
-    AllowedPattern: "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
-    ConstraintDescription: Must be a valid email address
+    AllowedPattern: ".{0}|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+    ConstraintDescription: 'Must be a valid email address'
+
+Conditions:
+
+  cDeployEmailAlerts: !Equals [ !Ref pDeployEmailAlerts, 'yes']
+  cDeployAlerts: !Equals [ !Ref pDeployEmailAlerts, 'yes']
 
 Resources:
 
@@ -46,20 +59,22 @@ Resources:
           StringEquals:
             'aws:PrincipalOrgID': !Ref pOrgID
 
-  rCriticalOrgSecAlertSNSTopic:
+  rCriticalOrgSecEmailAlertsSNSTopic:
     Type: AWS::SNS::Topic
+    Condition: cDeployEmailAlerts
     Properties:
-      TopicName: 'org-sec-alerts-critical'
+      TopicName: 'org-sec-alerts-crit-email'
       # DisplayName is used as "from" name in the email
       DisplayName: 'Critical Security Alerts'
       Tags:
         - Key: 'project'
           Value: !Ref pProjectName
 
-  rCriticalOrgSecAlertSNSTopicPolicy:
+  rCriticalOrgSecEmailAlertsSNSTopicPolicy:
     Type: AWS::SNS::TopicInlinePolicy
+    Condition: cDeployEmailAlerts
     Properties:
-      TopicArn: !Ref rCriticalOrgSecAlertSNSTopic
+      TopicArn: !Ref rCriticalOrgSecEmailAlertsSNSTopic
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -68,7 +83,7 @@ Resources:
               Service: events.amazonaws.com
             Action:
               - sns:Publish
-            Resource: !Ref rCriticalOrgSecAlertSNSTopic
+            Resource: !Ref rCriticalOrgSecEmailAlertsSNSTopic
             Condition:
               ArnEquals:
                 aws:SourceArn:
@@ -77,15 +92,17 @@ Resources:
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-sts-rule'
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-account-rule'
 
-  rCriticalOrgSecAlertSNSTopicSub:
+  rCriticalOrgSecEmailAlertsSNSTopicSub:
     Type: AWS::SNS::Subscription
+    Condition: cDeployEmailAlerts
     Properties:
       Endpoint: !Ref pCriticalAlertEmail
       Protocol: email
-      TopicArn: !Ref rCriticalOrgSecAlertSNSTopic
+      TopicArn: !Ref rCriticalOrgSecEmailAlertsSNSTopic
 
   rOrgSecAlertsDLQQueue:
     Type: AWS::SQS::Queue
+    Condition: cDeployAlerts
     Properties:
       QueueName: 'org-sec-alerts-dlq'
       MessageRetentionPeriod: 604800
@@ -96,6 +113,7 @@ Resources:
 
   rOrgSecAlertsDLQQueuePolicy:
     Type: AWS::SQS::QueueInlinePolicy
+    Condition: cDeployAlerts
     Properties:
       Queue: !Ref rOrgSecAlertsDLQQueue
       PolicyDocument:
@@ -117,6 +135,7 @@ Resources:
 
   rOrgSecAlertsRootSigninRule:
     Type: AWS::Events::Rule
+    Condition: cDeployAlerts
     Properties:
       Name: 'org-sec-alerts-root-signin-rule'
       Description: 'Listens for root user events from the "signin" event source'
@@ -145,7 +164,7 @@ Resources:
             - 'PasswordUpdated'
       Targets:
         - Id: 'CriticalOrgSecAlertSNSTopic'
-          Arn: !Ref rCriticalOrgSecAlertSNSTopic
+          Arn: !Ref rCriticalOrgSecEmailAlertsSNSTopic
           DeadLetterConfig:
             Arn: !GetAtt rOrgSecAlertsDLQQueue.Arn
           InputTransformer:
@@ -186,6 +205,7 @@ Resources:
 
   rOrgSecAlertsRootIAMRule:
     Type: AWS::Events::Rule
+    Condition: cDeployAlerts
     Properties:
       Name: 'org-sec-alerts-root-iam-rule'
       Description: 'Listens for root user events from the "iam" event source'
@@ -219,7 +239,7 @@ Resources:
             - 'UpdateAccountEmailAddress'
       Targets:
         - Id: 'CriticalOrgSecAlertSNSTopic'
-          Arn: !Ref rCriticalOrgSecAlertSNSTopic
+          Arn: !Ref rCriticalOrgSecEmailAlertsSNSTopic
           DeadLetterConfig:
             Arn: !GetAtt rOrgSecAlertsDLQQueue.Arn
           InputTransformer:
@@ -252,6 +272,7 @@ Resources:
 
   rOrgSecAlertsRootSTSRule:
     Type: AWS::Events::Rule
+    Condition: cDeployAlerts
     Properties:
       Name: 'org-sec-alerts-root-sts-rule'
       Description: 'Listens for root user events from the "sts" event source'
@@ -271,7 +292,7 @@ Resources:
             - 'GetSessionToken'
       Targets:
         - Id: 'CriticalOrgSecAlertSNSTopic'
-          Arn: !Ref rCriticalOrgSecAlertSNSTopic
+          Arn: !Ref rCriticalOrgSecEmailAlertsSNSTopic
           DeadLetterConfig:
             Arn: !GetAtt rOrgSecAlertsDLQQueue.Arn
           InputTransformer:
@@ -304,6 +325,7 @@ Resources:
 
   rOrgSecAlertsAccountRule:
     Type: AWS::Events::Rule
+    Condition: cDeployAlerts
     Properties:
       Name: 'org-sec-alerts-account-rule'
       Description: 'Listens for events from the "account" event source'
@@ -319,7 +341,7 @@ Resources:
             - 'PutContactInformation'
       Targets:
         - Id: 'CriticalOrgSecAlertSNSTopic'
-          Arn: !Ref rCriticalOrgSecAlertSNSTopic
+          Arn: !Ref rCriticalOrgSecEmailAlertsSNSTopic
           DeadLetterConfig:
             Arn: !GetAtt rOrgSecAlertsDLQQueue.Arn
           InputTransformer:
