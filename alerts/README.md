@@ -2,9 +2,11 @@
 
 ## Description
 
-This project deploys a simple centralized security alerting solution using a hub-and-spoke pattern. It sets up a custom EventBridge event bus, alert rules, and an SNS topic in the hub account. EventBridge rules are then deployed to each spoke account to forward events to the central event bus in the hub account.
+This project deploys a simple centralized security alerting solution using a hub-and-spoke pattern. It sets up a custom EventBridge event bus, alert rules, and an SNS topic(s) in the hub account. EventBridge rules are then deployed to each spoke account to forward events to the central event bus in the hub account.
 
 Forwarding rules can be deployed organization-wide across all regions or selectively to chosen accounts.
+
+Alerts can be delivered via email and/or Slack. You can choose alert delivery method during deployment.
 
 ## Alerts
 
@@ -51,7 +53,10 @@ Currently monitored and alerted activities:
 
 ## Deployment
 
-- Deploy `org-sec-alerts-central-bus.yaml` to the security-tooling (audit) account:
+- Deploy `org-sec-alerts-central-bus.yaml` to the security-tooling (audit) account.
+  - If you want to receive email alerts set `pDeployEmailAlerts` value to `yes` and provide `pCriticalAlertEmail`.
+  - If you want to receive Slack alerts set `pDeploySlackAlerts` value to `yes` and provide `pSlackWorkspaceId` and `pSlackChannelId`.
+    - To provide the required Slack workspace ID, you must perform the initial authorization flow with Slack in the AWS Chatbot console, then copy and paste the workspace ID from the console. See [Get started with Slack | AWS Chatbot](https://docs.aws.amazon.com/chatbot/latest/adminguide/slack-setup.html) for detailed steps.
 
 ```bash
 aws cloudformation deploy \
@@ -60,7 +65,11 @@ aws cloudformation deploy \
     --parameter-overrides \
         pProjectName=org-sec-alerts \
         pOrgID=o-abc123def4 \
-        pCriticalAlertEmail=criticalalerts@email.com
+        pDeployEmailAlerts=yes \
+        pCriticalAlertEmail=criticalalerts@email.com \
+        pDeploySlackAlerts=yes \
+        pSlackWorkspaceId=T01ASDFGHJK \
+        pSlackChannelId=C06ASDFGHJK
 ```
 
 ---
@@ -91,20 +100,23 @@ aws cloudformation deploy \
 ## Deployed Resources
 
 - `org-sec-alerts-central-bus.yaml` deploys:
-  - org-sec-event-bus                           - EventBridge event bus
-  - org-sec-alerts-critical                     - critical alert SNS topic
-  - org-sec-alerts-dlq                          - DLQ SQS queue
-  - org-sec-alerts-root-signin-rule             - EventBridge Rule
-  - org-sec-alerts-root-iam-rule                - EventBridge Rule
-  - org-sec-alerts-root-sts-rule                - EventBridge Rule
-  - org-sec-alerts-account-rule                 - EventBridge Rule
+  - `org-sec-event-bus`                           - EventBridge event bus
+  - `org-sec-alerts-crit-email`                   - critical email alert SNS topic
+  - `org-sec-alerts-crit-slack`                   - critical Slack alert SNS topic
+  - `org-sec-alerts-dlq`                          - DLQ SQS queue
+  - `org-sec-alerts-slack-channel`                - AWS Chatbot Slack channel configuration
+  - `org-sec-alerts-slack-channel-role`           - IAM role for AWS Chatbot Slack channel
+  - `org-sec-alerts-root-signin-rule`             - EventBridge Rule
+  - `org-sec-alerts-root-iam-rule`                - EventBridge Rule
+  - `org-sec-alerts-root-sts-rule`                - EventBridge Rule
+  - `org-sec-alerts-account-rule`                 - EventBridge Rule
 
 - `org-sec-alerts-event-fwding.yaml` deploys:
-  - org-sec-alerts-root-signin-fwd-rule         - EventBridge Rule
-  - org-sec-alerts-root-iam-fwd-rule            - EventBridge Rule
-  - org-sec-alerts-root-sts-fwd-rule            - EventBridge Rule
-  - org-sec-alerts-account-fwd-rule             - EventBridge Rule
-  - org-sec-alerts-event-fwd-rule-role          - EventBridge Rule IAM execution role
+  - `org-sec-alerts-root-signin-fwd-rule`         - EventBridge Rule
+  - `org-sec-alerts-root-iam-fwd-rule`            - EventBridge Rule
+  - `org-sec-alerts-root-sts-fwd-rule`            - EventBridge Rule
+  - `org-sec-alerts-account-fwd-rule`             - EventBridge Rule
+  - `org-sec-alerts-event-fwd-rule-role`          - EventBridge Rule IAM execution role
 
 - `org-sec-alerts-event-fwding-stackset.yaml` deploys:
-  - org-sec-alerts-event-fwding-stackset        - StackSet
+  - `org-sec-alerts-event-fwding-stackset`        - StackSet
