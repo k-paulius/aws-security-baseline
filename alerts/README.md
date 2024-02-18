@@ -53,10 +53,16 @@ Currently monitored and alerted activities:
 
 ## Deployment
 
-- Deploy `org-sec-alerts-central-bus.yaml` to the security-tooling (audit) account.
-  - If you want to receive email alerts set `pDeployEmailAlerts` value to `yes` and provide `pCriticalAlertEmail`.
-  - If you want to receive Slack alerts set `pDeploySlackAlerts` value to `yes` and provide `pSlackWorkspaceId` and `pSlackChannelId`.
-    - To provide the required Slack workspace ID, you must perform the initial authorization flow with Slack in the AWS Chatbot console, then copy and paste the workspace ID from the console. See [Get started with Slack | AWS Chatbot](https://docs.aws.amazon.com/chatbot/latest/adminguide/slack-setup.html) for detailed steps.
+This solution requires you to deploy two CloudFormation stacks.
+- `org-sec-alerts-central-bus.yaml`. This stack creates a central event bus, SNS queues for email and Slack alerts, SQS dead-letter-queue, Chatbot Slack channel configuration and EventBridge rules that forward events to the SNS topics. This stack should be deployed in a security tooling (audit) account.
+- `org-sec-alerts-event-fwding.yaml`. This stack creates EventBridge rules that forward events to the central event bus. It needs to be deployed in every relevant account and region. You can do so using your preferred method or the provided StackSet template (`org-sec-alerts-event-fwding-stackset.yaml`).
+
+### Step 1: Deploy `org-sec-alerts-central-bus.yaml`
+---
+- If you want to receive email alerts set `pDeployEmailAlerts` value to `yes` and provide `pCriticalAlertEmail`.
+- If you want to receive Slack alerts set `pDeploySlackAlerts` value to `yes` and provide `pSlackWorkspaceId` and `pSlackChannelId`.
+  - To provide the required Slack workspace ID, you must perform the initial authorization flow with Slack in the AWS Chatbot console, then copy and paste the workspace ID from the console. See [Get started with Slack | AWS Chatbot](https://docs.aws.amazon.com/chatbot/latest/adminguide/slack-setup.html) for detailed steps.
+- After the stack has been created, you will receive an email requesting that you confirm the subscription to the SNS topic.
 
 ```bash
 aws cloudformation deploy \
@@ -72,10 +78,11 @@ aws cloudformation deploy \
         pSlackChannelId=C06ASDFGHJK
 ```
 
+### Step 2: Deploy `org-sec-alerts-event-fwding.yaml`
 ---
-- Deploy `org-sec-alerts-event-fwding.yaml` to all relevant accounts and **regions** for event forwarding to the central bus. You can do so using your preferred method or the provided StackSet template.
+
 - To deploy using StackSet template:
-  - 1. Modify regions in the `org-sec-alerts-event-fwding-stackset.yaml` template to include all the regions you want to deploy to. Currently it only deploys to us-east-1 region.
+  - 1. Modify regions in the `org-sec-alerts-event-fwding-stackset.yaml` template to include all the regions you want to deploy to. Currently it only deploys to `us-east-1` region.
   - 2. Upload `org-sec-alerts-event-fwding.yaml` template to an S3 bucket.
   - 3. Deploy StackSet in the management account or delegated CloudFormation StackSet admin account:
     ```bash
