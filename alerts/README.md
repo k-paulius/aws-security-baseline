@@ -8,6 +8,9 @@ Forwarding rules can be deployed organization-wide across all regions or selecti
 
 Alerts can be delivered via email and/or Slack. You can choose alert delivery method during deployment.
 
+![Architecture](assets/architecture.png)
+
+
 ## Alerts
 
 Currently monitored and alerted activities:
