@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Monthly cost budget'
+
+Parameters:
+
+  pBudgetName:
+    Description: 'Budget name'
+    Type: String
+    Default: 'monthly-cost-budget'
+
+  pBudgetLimitAmount:
+    Description: 'Budgeted amount (USD)'
+    Type: Number
+    Default: 0
+
+  pEmailAddress:
+    Description: 'AWS budget notification email address'
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+    ConstraintDescription: 'Must be a valid email address'
+
+Resources:
+
+  rBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Ref pBudgetName
+        BudgetLimit:
+          Amount: !Ref pBudgetLimitAmount
+          Unit: USD
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        TimePeriod:
+          Start: 1577865600
+          End: 3706473600
+        CostTypes:
+          IncludeCredit: false
+          IncludeDiscount: true
+          IncludeOtherSubscription: true
+          IncludeRecurring: true
+          IncludeRefund: false
+          IncludeSubscription: true
+          IncludeSupport: false
+          IncludeTax: true
+          IncludeUpfront: true
+          UseAmortized: false
+          UseBlended: false
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ThresholdType: PERCENTAGE
+            ComparisonOperator: GREATER_THAN
+            Threshold: 50
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref pEmailAddress
+        - Notification:
+            NotificationType: ACTUAL
+            ThresholdType: PERCENTAGE
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref pEmailAddress
+        - Notification:
+            NotificationType: ACTUAL
+            ThresholdType: PERCENTAGE
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref pEmailAddress
+        - Notification:
+            NotificationType: FORECASTED
+            ThresholdType: PERCENTAGE
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref pEmailAddress
+        - Notification:
+            NotificationType: FORECASTED
+            ThresholdType: PERCENTAGE
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref pEmailAddress
