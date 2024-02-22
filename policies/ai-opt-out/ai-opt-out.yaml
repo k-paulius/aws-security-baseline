@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'AI Opt-Out: Opt-out of all AI services'
+
+Parameters:
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rAIOptOut:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: AISERVICES_OPT_OUT_POLICY
+      Name: 'AIOptOut'
+      Description: 'Opt-out of all AI services'
+      Content:
+        services:
+          '@@operators_allowed_for_child_policies':
+            - '@@none'
+          default:
+            '@@operators_allowed_for_child_policies':
+              - '@@none'
+            opt_out_policy:
+              '@@operators_allowed_for_child_policies':
+                - '@@none'
+              '@@assign': optOut
+      TargetIds:
+        - !Ref pTargetIds

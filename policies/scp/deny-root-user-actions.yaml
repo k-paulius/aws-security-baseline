@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'SCP: Deny Actions as a Root User'
+
+Parameters:
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rDenyRootUserActionsSCP:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: 'DenyRootUserActions'
+      Description: 'Deny Actions as a Root User'
+      Content:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyRootUserActions
+            Effect: Deny
+            Action: '*'
+            Resource: '*'
+            Condition:
+              StringLike:
+                aws:PrincipalArn: arn:aws:iam::*:root
+      TargetIds:
+        - !Ref pTargetIds

@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'SCP: Deny access to AWS resources outside us-east-1'
+
+Parameters:
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rRestrictRegionSCP:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: 'RestrictRegion'
+      Description: 'Deny access to AWS resources outside us-east-1'
+      Content:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: RestrictRegion
+            Effect: Deny
+            Action: '*'
+            Resource: '*'
+            Condition:
+              StringNotEquals:
+                aws:RequestedRegion:
+                  - us-east-1
+      TargetIds:
+        - !Ref pTargetIds

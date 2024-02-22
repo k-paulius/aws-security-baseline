@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'SCP: Deny Ability to Leave Organization'
+
+Parameters:
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rDenyLeaveOrganizationSCP:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: 'DenyLeaveOrganization'
+      Description: 'Deny Ability to Leave Organization'
+      Content:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyLeaveOrganization
+            Effect: Deny
+            Action:
+              - 'organizations:LeaveOrganization'
+            Resource: '*'
+      TargetIds:
+        - !Ref pTargetIds
