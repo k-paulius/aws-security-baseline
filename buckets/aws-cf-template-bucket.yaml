@@ -13,7 +13,7 @@ Parameters:
 Resources:
 
   rCFTemplateBucket:
-    DeletionPolicy: Retain
+    DeletionPolicy: RetainExceptOnCreate
     UpdateReplacePolicy: Retain
     Type: AWS::S3::Bucket
     Properties:

@@ -10,7 +10,7 @@ Resources:
 
   rDenyLeaveOrganizationSCP:
     Type: AWS::Organizations::Policy
-    DeletionPolicy: Retain
+    DeletionPolicy: RetainExceptOnCreate
     UpdateReplacePolicy: Retain
     Properties:
       Type: SERVICE_CONTROL_POLICY

@@ -10,7 +10,7 @@ Resources:
 
   rAIOptOut:
     Type: AWS::Organizations::Policy
-    DeletionPolicy: Retain
+    DeletionPolicy: RetainExceptOnCreate
     UpdateReplacePolicy: Retain
     Properties:
       Type: AISERVICES_OPT_OUT_POLICY
