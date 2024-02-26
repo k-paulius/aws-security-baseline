@@ -4,14 +4,14 @@ Description: 'Security alert forwarding to the central event bus'
 Parameters:
 
   pProjectName:
-    Description: Project Name (value used in the 'project' tag)
+    Description: 'Project Name (value used in the "project" tag)'
     Type: String
     Default: 'org-sec-alerts'
     AllowedPattern: '[a-zA-Z0-9\-_]+'
     ConstraintDescription: 'Project name value must contain only alphanumeric characters, hyphens, and underscores'
 
   pOrgSecEventBus:
-    Description: Organization wide security alert event bus ARN
+    Description: 'Organization wide security alert event bus ARN'
     Type: String
 
 Resources:
