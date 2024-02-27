@@ -1,0 +1,245 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'S3 Bucket for the Organization CloudTrail'
+
+Parameters:
+
+  pBucketNameSuffix:
+    Description: 'Unique 16 character value that will be appended to the bucket name. Accepted values: lower case letters and numbers.'
+    Type: String
+    AllowedPattern: '^[a-z0-9]{16}$'
+    ConstraintDescription: 'Input parameter pBucketNameSuffix must only contain lowercase letters and numbers and be 16 characters long.'
+    MinLength: 16
+
+  pManagementAccountId:
+    Description: 'Organization Management Account ID'
+    Type: String
+    AllowedPattern: '^[0-9]{12}$'
+    ConstraintDescription: 'Must be 12 digits'
+
+  pOrgID:
+    Description: 'AWS Organization ID (e.g., o-abc1234567)'
+    Type: String
+    AllowedPattern: '^o-[a-zA-Z0-9]{10}$'
+    ConstraintDescription: 'Must be a valid AWS Organization ID (e.g., o-abc1234567)'
+
+  pOrgTrailName:
+    Description: 'Name of the Organization CloudTrail'
+    Type: String
+    Default: 'org-cloudtrail'
+    AllowedPattern: '^[A-Za-z0-9][a-zA-Z0-9\-_.]{2,127}$'
+    ConstraintDescription: 'Trail name value must contain only alphanumeric characters, hyphens, periods and underscores'
+
+  pOrgTrailKeyArn:
+    Description: 'Organization CloudTrail KMS Key Arn'
+    Type: String
+    AllowedPattern: '^$|^arn:(aws[a-zA-Z-]*){1}:kms:[a-z0-9-]+:\d{12}:key\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
+    ConstraintDescription: 'KMS Key Arn example: arn:aws:kms:us-east-1:123456789012:key/ae965708-a783-460a-ae77-fd8f0b8ea511'
+
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    Default: 'org-cloudtrail'
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
+
+Resources:
+
+  rOrgTrailAccessLoggingBucket:
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'org-cloudtrail-logs-${pBucketNameSuffix}-access-logs'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  rOrgTrailAccessLoggingBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref rOrgTrailAccessLoggingBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+
+          - Sid: S3ServerAccessLogsPolicy
+            Effect: Allow
+            Principal:
+              Service: logging.s3.amazonaws.com
+            Action: 's3:PutObject'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${rOrgTrailAccessLoggingBucket}/org-cloudtrail-logs-${pBucketNameSuffix}/*'
+            Condition:
+              ArnLike:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:s3:::${rOrgTrailBucket}'
+              StringEquals:
+                aws:SourceAccount: !Sub '${AWS::AccountId}'
+
+          - Sid: RestrictToTLSRequestsOnly
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3:::${rOrgTrailAccessLoggingBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${rOrgTrailAccessLoggingBucket}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+          - Sid: DenyExternalPrincipals
+            Effect: Deny
+            Action: 's3:*'
+            Principal: '*'
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3:::${rOrgTrailAccessLoggingBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${rOrgTrailAccessLoggingBucket}/*'
+            Condition:
+              StringNotEquals:
+                aws:PrincipalOrgID: !Ref pOrgID
+              Bool:
+                aws:PrincipalIsAWSService: false
+
+  rOrgTrailBucket:
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'org-cloudtrail-logs-${pBucketNameSuffix}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref pOrgTrailKeyArn
+            BucketKeyEnabled: True
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LoggingConfiguration:
+        DestinationBucketName: !Ref rOrgTrailAccessLoggingBucket
+        LogFilePrefix: !Sub 'org-cloudtrail-logs-${pBucketNameSuffix}/'
+        TargetObjectKeyFormat:
+          PartitionedPrefix:
+            PartitionDateSource: EventTime
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  rOrgTrailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref rOrgTrailBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+
+          - Sid: AWSCloudTrailAclCheck
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 's3:GetBucketAcl'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${rOrgTrailBucket}'
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${pManagementAccountId}:trail/${pOrgTrailName}'
+
+          - Sid: AWSCloudTrailWrite
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 's3:PutObject'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${rOrgTrailBucket}/AWSLogs/${pManagementAccountId}/*'
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: bucket-owner-full-control
+              ArnEquals:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${pManagementAccountId}:trail/${pOrgTrailName}'
+
+          - Sid: AWSCloudTrailOrganizationWrite
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 's3:PutObject'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${rOrgTrailBucket}/AWSLogs/${pOrgID}/*'
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: bucket-owner-full-control
+              ArnEquals:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${pManagementAccountId}:trail/${pOrgTrailName}'
+
+          - Sid: RestrictToTLSRequestsOnly
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3:::${rOrgTrailBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${rOrgTrailBucket}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+          - Sid: DenyExternalPrincipals
+            Effect: Deny
+            Action: 's3:*'
+            Principal: '*'
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3:::${rOrgTrailBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${rOrgTrailBucket}/*'
+            Condition:
+              StringNotEquals:
+                aws:PrincipalOrgID: !Ref pOrgID
+              Bool:
+                aws:PrincipalIsAWSService: false
+
+Outputs:
+
+  oOrgTrailBucketName:
+    Description: 'Organization CloudTrail S3 Bucket Name'
+    Value: !Ref rOrgTrailBucket
+
+  oOrgTrailBucketArn:
+    Description: 'Organization CloudTrail S3 Bucket Arn'
+    Value: !GetAtt rOrgTrailBucket.Arn
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

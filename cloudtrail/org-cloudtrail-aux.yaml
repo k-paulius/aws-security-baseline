@@ -1,0 +1,260 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Auxiliary Resources for Organization CloudTrail'
+
+Parameters:
+
+  pOrgTrailName:
+    Description: 'Name of the Organization CloudTrail'
+    Type: String
+    Default: 'org-cloudtrail'
+    AllowedPattern: '^[A-Za-z0-9][a-zA-Z0-9\-_.]{2,127}$'
+    ConstraintDescription: 'Trail name value must contain only alphanumeric characters, hyphens, periods and underscores'
+
+  pManagementAccountId:
+    Description: 'Organization Management Account ID'
+    Type: String
+    AllowedPattern: '^[0-9]{12}$'
+    ConstraintDescription: 'Must be 12 digits'
+
+  pOrgID:
+    Description: 'AWS Organization ID (e.g., o-abc1234567)'
+    Type: String
+    AllowedPattern: '^o-[a-zA-Z0-9]{10}$'
+    ConstraintDescription: 'Must be a valid AWS Organization ID (e.g., o-abc1234567)'
+
+  pOrgTrailKeyAlias:
+    Description: 'Organization CloudTrail KMS Key Alias'
+    Default: 'org-cloudtrail-key'
+    Type: String
+
+  pEnableCloudWatchLogs:
+    Description: 'Configure trail to send log events to CloudWatch Logs?'
+    Type: String
+    Default: 'no'
+    AllowedValues:
+         - 'yes'
+         - 'no'
+
+  pOrgTrailLogGroupRetention:
+    Description: 'The number of days to retain the Organization CloudTrail log events'
+    Type: String
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+    Default: 400
+
+  pEnableSNSTopic:
+    Description: 'Configure trail to send file delivery notifications to an SNS Topic?'
+    Type: String
+    Default: 'no'
+    AllowedValues:
+         - 'yes'
+         - 'no'
+
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    Default: 'org-cloudtrail'
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
+
+Conditions:
+
+  cEnableCloudWatchLogs: !Equals [ !Ref pEnableCloudWatchLogs, 'yes']
+  cEnableSNSTopic: !Equals [ !Ref pEnableSNSTopic, 'yes']
+
+Resources:
+
+  rOrgTrailKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: 'Organization CloudTrail key'
+      Enabled: true
+      EnableKeyRotation: true
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyUsage: ENCRYPT_DECRYPT
+      MultiRegion: false
+      Origin: AWS_KMS
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: 'org-trail-key'
+        Statement:
+
+          - Sid: 'Enable IAM User Permissions'
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+
+          - Sid: 'Allow CloudTrail to encrypt logs'
+            Effect: Allow
+            Principal:
+              Service: 'cloudtrail.amazonaws.com'
+            Action: 'kms:GenerateDataKey*'
+            Resource: '*'
+            Condition:
+              StringLike:
+                kms:EncryptionContext:aws:cloudtrail:arn: !Sub 'arn:${AWS::Partition}:cloudtrail:*:${pManagementAccountId}:trail/*'
+              ArnEquals:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${pManagementAccountId}:trail/${pOrgTrailName}'
+
+          - Sid: 'Allow CloudTrail to describe key'
+            Effect: Allow
+            Principal:
+              Service: 'cloudtrail.amazonaws.com'
+            Action: 'kms:DescribeKey'
+            Resource: '*'
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${pManagementAccountId}:trail/${pOrgTrailName}'
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  rOrgTrailKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub alias/${pOrgTrailKeyAlias}
+      TargetKeyId: !Ref rOrgTrailKey
+
+  rOrgTrailCloudWatchLogGroup:
+    Condition: cEnableCloudWatchLogs
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: !Sub 'aws-cloudtrail/${pOrgTrailName}'
+      LogGroupClass: STANDARD
+      RetentionInDays: !Ref pOrgTrailLogGroupRetention
+      #KmsKeyId: 'String'
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  rOrgTrailCloudWatchLogGroupRole:
+    Condition: cEnableCloudWatchLogs
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'CloudTrailRoleForCloudWatchLogs-${pOrgTrailName}'
+      Description: 'AWS CloudTrail role for accessing CloudWatch Logs'
+      Path: '/'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: cloudtrail-cloudwatch-logs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+
+              - Sid: AWSCloudTrailCreateLogStream
+                Effect: Allow
+                Action: logs:CreateLogStream
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${rOrgTrailCloudWatchLogGroup}:log-stream:${pManagementAccountId}_CloudTrail_${AWS::Region}*'
+                  - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${rOrgTrailCloudWatchLogGroup}:log-stream:${pOrgID}_*'
+
+              - Sid: AWSCloudTrailPutLogEvents
+                Effect: Allow
+                Action: logs:PutLogEvents
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${rOrgTrailCloudWatchLogGroup}:log-stream:${pManagementAccountId}_CloudTrail_${AWS::Region}*'
+                  - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${rOrgTrailCloudWatchLogGroup}:log-stream:${pOrgID}_*'
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  rOrgTrailSNSTopic:
+    Condition: cEnableSNSTopic
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${pOrgTrailName}-file-delivery'
+      DisplayName: 'AWS CloudTrail File Delivery Notifications'
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  rOrgTrailSNSTopicPolicy:
+    Condition: cEnableSNSTopic
+    Type: AWS::SNS::TopicInlinePolicy
+    Properties:
+      TopicArn: !Ref rOrgTrailSNSTopic
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+
+          - Sid: AWSCloudTrailSNSPolicy
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: sns:Publish
+            Resource: !Ref rOrgTrailSNSTopic
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${pManagementAccountId}:trail/${pOrgTrailName}'
+
+Outputs:
+
+  oOrgTrailKeyArn:
+    Description: 'Organization CloudTrail KMS key ARN'
+    Value: !GetAtt rOrgTrailKey.Arn
+
+  oOrgTrailCloudWatchLogGroupName:
+    Condition: cEnableCloudWatchLogs
+    Description: 'Organization CloudTrail CloudWatch Log Group Name'
+    Value: !Ref rOrgTrailCloudWatchLogGroup
+
+  oOrgTrailCloudWatchLogGroupArn:
+    Condition: cEnableCloudWatchLogs
+    Description: 'Organization CloudTrail CloudWatch Log Group Arn'
+    Value: !GetAtt rOrgTrailCloudWatchLogGroup.Arn
+
+  oOrgTrailCloudWatchLogGroupRoleArn:
+    Condition: cEnableCloudWatchLogs
+    Description: 'CloudWatch Log Group Role Arn'
+    Value: !GetAtt rOrgTrailCloudWatchLogGroupRole.Arn
+
+  oOrgTrailSNSTopicName:
+    Condition: cEnableSNSTopic
+    Description: 'Organization CloudTrail SNS Topic Name'
+    Value: !GetAtt rOrgTrailSNSTopic.TopicName
+
+  oOrgTrailSNSTopicArn:
+    Condition: cEnableSNSTopic
+    Description: 'Organization CloudTrail SNS Topic Arn'
+    Value: !GetAtt rOrgTrailSNSTopic.TopicArn
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

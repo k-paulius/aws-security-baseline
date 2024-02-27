@@ -1,0 +1,119 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Organization CloudTrail'
+
+Parameters:
+
+  pOrgTrailName:
+    Description: 'Name of the Organization CloudTrail'
+    Type: String
+    Default: 'org-cloudtrail'
+    AllowedPattern: '^[A-Za-z0-9][a-zA-Z0-9\-_.]{2,127}$'
+    ConstraintDescription: 'Trail name value must contain only alphanumeric characters, hyphens, periods and underscores'
+
+  pOrgTrailKeyArn:
+    Description: 'Organization CloudTrail KMS Key Arn'
+    Type: String
+    AllowedPattern: '^$|^arn:(aws[a-zA-Z-]*){1}:kms:[a-z0-9-]+:\d{12}:key\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
+    ConstraintDescription: 'KMS Key Arn example: arn:aws:kms:us-east-1:123456789012:key/ae965708-a783-460a-ae77-fd8f0b8ea511'
+
+  pOrgTrailBucketName:
+    Description: 'Organization CloudTrail S3 Bucket Name'
+    Type: String
+    AllowedPattern: ^$|^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: 'S3 Bucket name value must contain only alphanumeric characters and hyphens'
+
+  pEnableCloudWatchLogs:
+    Description: 'Configure trail to send log events to CloudWatch Logs. (When enabled, you must specify a CloudWatch Logs group and a role for the CloudWatch Logs)'
+    Type: String
+    Default: 'no'
+    AllowedValues:
+         - 'yes'
+         - 'no'
+
+  pCloudWatchLogsLogGroupArn:
+    Description: 'CloudWatch Logs log group Arn to which CloudTrail logs are delivered'
+    Type: String
+    Default: ''
+    AllowedPattern: '.{0}|.*'
+
+  pCloudWatchLogsRoleArn:
+    Description: "Arn of the IAM role for the CloudWatch Logs endpoint to assume to write to a user's log group"
+    Type: String
+    Default: ''
+    AllowedPattern: '.{0}|.*'
+
+  pEnableSNSTopic:
+    Description: 'Configure trail to send file delivery notifications to an SNS Topic. (When enabled, you must specify an SNS Topic)'
+    Type: String
+    Default: 'no'
+    AllowedValues:
+         - 'yes'
+         - 'no'
+
+  pSnsTopicName:
+    Description: 'Amazon SNS Topic Arn for the Organization CloudTrail file delivery notifications'
+    Type: String
+    Default: ''
+    AllowedPattern: '.{0}|.*'
+
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    Default: 'org-cloudtrail'
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
+
+Conditions:
+
+  cEnableCloudWatchLogs: !Equals [ !Ref pEnableCloudWatchLogs, 'yes']
+  cEnableSNSTopic: !Equals [ !Ref pEnableSNSTopic, 'yes']
+
+Resources:
+
+  rOrgTrail:
+    Type: AWS::CloudTrail::Trail
+    Properties:
+      TrailName: !Ref pOrgTrailName
+      IsLogging: true
+      IncludeGlobalServiceEvents: true
+      IsMultiRegionTrail: true
+      IsOrganizationTrail: true
+      EnableLogFileValidation: true
+      EventSelectors:
+        - IncludeManagementEvents: true
+          ReadWriteType: All
+      KMSKeyId: !Ref pOrgTrailKeyArn
+      S3BucketName: !Ref pOrgTrailBucketName
+      S3KeyPrefix: ''
+      CloudWatchLogsLogGroupArn: !If [ cEnableCloudWatchLogs, !Ref pCloudWatchLogsLogGroupArn, !Ref 'AWS::NoValue' ]
+      CloudWatchLogsRoleArn: !If [ cEnableCloudWatchLogs, !Ref pCloudWatchLogsRoleArn, !Ref 'AWS::NoValue' ]
+      SnsTopicName: !If [ cEnableSNSTopic, !Ref pSnsTopicName, !Ref 'AWS::NoValue' ]
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+Outputs:
+
+  oOrgTrailArn:
+    Description: 'Organization CloudTrail Arn'
+    Value: !GetAtt rOrgTrail.Arn
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
