@@ -159,7 +159,9 @@ Resources:
           eventName:
             - 'ScheduleKeyDeletion'
             - 'DisableKey'
+            - 'EnableKey'
             - 'DisableKeyRotation'
+            - 'EnableKeyRotation'
             - 'PutKeyPolicy'
             - 'UpdateKeyDescription'
             - 'TagResource'
@@ -209,4 +211,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.5'
+    Value: '1.0.6'
