@@ -542,6 +542,12 @@ Resources:
 
 Outputs:
 
+  oOrgSecEventBusArn:
+    Description: 'Organization wide security event bus ARN'
+    Value: !GetAtt rOrgSecEventBus.Arn
+    Export:
+      Name: 'org-sec-event-bus-arn'
+
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.4'
+    Value: '1.0.5'
