@@ -57,7 +57,7 @@ Currently monitored and alerted activities:
 ## Deployment
 
 This solution requires you to deploy two CloudFormation stacks.
-- `org-sec-alerts-central-bus.yaml`. This stack creates a central event bus, SNS queues for email and Slack alerts, SQS dead-letter-queue, Chatbot Slack channel configuration and EventBridge rules that forward events to the SNS topics. This stack should be deployed in a security tooling (audit) account.
+- `org-sec-alerts-central-bus.yaml`. This stack creates a central event bus, SNS queues for email and Slack alerts, SQS dead-letter-queue, Chatbot Slack channel configuration and EventBridge rules that forward events to the SNS topics. This stack should be deployed in the Security Tooling (audit) account.
 - `org-sec-alerts-event-fwding.yaml`. This stack creates EventBridge rules that forward events to the central event bus. It needs to be deployed in every relevant account and region. You can do so using your preferred method or the provided StackSet template (`org-sec-alerts-event-fwding-stackset.yaml`).
 
 ### Step 1: Deploy `org-sec-alerts-central-bus.yaml`
@@ -72,13 +72,15 @@ aws cloudformation deploy \
     --template-file org-sec-alerts-central-bus.yaml \
     --stack-name org-sec-alerts-central-bus \
     --parameter-overrides \
-        pProjectName=org-sec-alerts \
         pOrgID=o-abc123def4 \
         pDeployEmailAlerts=yes \
         pCriticalAlertEmail=criticalalerts@email.com \
         pDeploySlackAlerts=yes \
         pSlackWorkspaceId=T01ASDFGHJK \
-        pSlackChannelId=C06ASDFGHJK
+        pSlackChannelId=C06ASDFGHJK \
+        pWorkloadIdTag=org-sec-alerts \
+        pEnvironmentIdTag=prod \
+        pOwnerNameTag=secops
 ```
 
 ### Step 2: Deploy `org-sec-alerts-event-fwding.yaml`
@@ -95,7 +97,10 @@ aws cloudformation deploy \
         --parameter-overrides \
             pOrgSecEventBus=arn:aws:events:us-east-1:123456789012:event-bus/org-sec-event-bus \
             pDeployTargetOrgUnitId=r-abcd \
-            pTemplateURL=https://BUCKETNAME.s3.amazonaws.com/org-sec-alerts-event-fwding.yaml
+            pTemplateURL=https://BUCKETNAME.s3.amazonaws.com/org-sec-alerts-event-fwding.yaml \
+            pWorkloadIdTag=org-sec-alerts \
+            pEnvironmentIdTag=prod \
+            pOwnerNameTag=secops
     ```
   - 4. Deploy `org-sec-alerts-event-fwding.yaml` template in the management account. This needs to be done manually because StackSet uses serviced managed permission model and does not deploy templates to the management account.
     ```bash
@@ -104,7 +109,10 @@ aws cloudformation deploy \
         --stack-name org-sec-alerts-event-fwding \
         --capabilities "CAPABILITY_NAMED_IAM" \
         --parameter-overrides \
-            pOrgSecEventBus=arn:aws:events:us-east-1:123456789012:event-bus/org-sec-event-bus
+            pOrgSecEventBus=arn:aws:events:us-east-1:123456789012:event-bus/org-sec-event-bus \
+            pWorkloadIdTag=org-sec-alerts \
+            pEnvironmentIdTag=prod \
+            pOwnerNameTag=secops
     ```
 
 ## Deployed Resources

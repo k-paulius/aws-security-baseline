@@ -3,13 +3,6 @@ Description: 'Organization wide security event bus and alerts'
 
 Parameters:
 
-  pProjectName:
-    Description: 'Project Name (value used in the "project" tag)'
-    Type: String
-    Default: 'org-sec-alerts'
-    AllowedPattern: '[a-zA-Z0-9\-_]+'
-    ConstraintDescription: 'Project name value must contain only alphanumeric characters, hyphens, and underscores'
-
   pOrgID:
     Description: 'AWS Organization ID (e.g., o-abc1234567)'
     Type: String
@@ -50,6 +43,25 @@ Parameters:
     AllowedPattern: '.{0}|[A-Za-z0-9]+'
     ConstraintDescription: 'Slack channel ID must contain only letters and digits'
 
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    Default: 'org-sec-alerts'
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
+
 Conditions:
 
   cDeployEmailAlerts: !Equals [ !Ref pDeployEmailAlerts, 'yes']
@@ -63,8 +75,12 @@ Resources:
     Properties:
       Name: 'org-sec-event-bus'
       Tags:
-        - Key: 'project'
-          Value: !Ref pProjectName
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
 
   rOrgSecEventBusPolicy:
     Type: AWS::Events::EventBusPolicy
@@ -88,8 +104,12 @@ Resources:
       # DisplayName is used as "from" name in the email
       DisplayName: 'Critical Security Alerts'
       Tags:
-        - Key: 'project'
-          Value: !Ref pProjectName
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
 
   rCriticalOrgSecEmailAlertsSNSTopicPolicy:
     Type: AWS::SNS::TopicInlinePolicy
@@ -128,8 +148,12 @@ Resources:
       TopicName: 'org-sec-alerts-crit-slack'
       DisplayName: 'Critical Organization Wide Security Alerts'
       Tags:
-        - Key: 'project'
-          Value: !Ref pProjectName
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
 
   rCriticalOrgSecSlackAlertsSNSTopicPolicy:
     Type: AWS::SNS::TopicInlinePolicy
@@ -193,8 +217,12 @@ Resources:
                 Resource:
                   - '*'
       Tags:
-        - Key: 'project'
-          Value: !Ref pProjectName
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
 
   rOrgSecAlertsDLQQueue:
     Type: AWS::SQS::Queue
@@ -204,8 +232,12 @@ Resources:
       MessageRetentionPeriod: 604800
       SqsManagedSseEnabled: true
       Tags:
-        - Key: 'project'
-          Value: !Ref pProjectName
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
 
   rOrgSecAlertsDLQQueuePolicy:
     Type: AWS::SQS::QueueInlinePolicy
@@ -512,4 +544,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.3'
+    Value: '1.0.4'

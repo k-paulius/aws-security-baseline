@@ -3,16 +3,28 @@ Description: 'Security alert forwarding to the central event bus'
 
 Parameters:
 
-  pProjectName:
-    Description: 'Project Name (value used in the "project" tag)'
-    Type: String
-    Default: 'org-sec-alerts'
-    AllowedPattern: '[a-zA-Z0-9\-_]+'
-    ConstraintDescription: 'Project name value must contain only alphanumeric characters, hyphens, and underscores'
-
   pOrgSecEventBus:
     Description: 'Organization wide security alert event bus ARN'
     Type: String
+
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    Default: 'org-sec-alerts'
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
 
 Resources:
 
@@ -162,11 +174,15 @@ Resources:
                 Resource:
                   - !Ref pOrgSecEventBus
       Tags:
-        - Key: 'project'
-          Value: !Ref pProjectName
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
 
 Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.2'
+    Value: '1.0.3'
