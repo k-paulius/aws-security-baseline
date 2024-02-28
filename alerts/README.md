@@ -56,8 +56,9 @@ Currently monitored and alerted activities:
 
 ## Deployment
 
-This solution requires you to deploy two CloudFormation stacks.
-- `org-sec-alerts-central-bus.yaml`. This stack creates a central event bus, SNS queues for email and Slack alerts, SQS dead-letter-queue, Chatbot Slack channel configuration and EventBridge rules that forward events to the SNS topics. This stack should be deployed in the Security Tooling (audit) account.
+This solution requires you to deploy three CloudFormation stacks.
+- `org-sec-alerts-central-bus.yaml`. This stack creates a central event bus, SNS queues for email and Slack alerts, SQS dead-letter-queue, and Chatbot Slack channel configuration. This stack should be deployed in the Security Tooling (audit) account.
+- `org-sec-alerts-general-alerts.yaml` - This stack creates general EventBridge rules that forward events to the SNS topics. This stack depends on `org-sec-alerts-central-bus.yaml` stack.
 - `org-sec-alerts-event-fwding.yaml`. This stack creates EventBridge rules that forward events to the central event bus. It needs to be deployed in every relevant account and region. You can do so using your preferred method or the provided StackSet template (`org-sec-alerts-event-fwding-stackset.yaml`).
 
 ### Step 1: Deploy `org-sec-alerts-central-bus.yaml`
@@ -83,7 +84,21 @@ aws cloudformation deploy \
         pOwnerNameTag=secops
 ```
 
-### Step 2: Deploy `org-sec-alerts-event-fwding.yaml`
+### Step 2: Deploy `org-sec-alerts-general-alerts.yaml`
+---
+- If you want to receive email alerts you must deploy central bus stack with parameter `pDeployEmailAlerts=yes` and set `pSendEmailAlerts` value to `yes`.
+- If you want to receive Slack alerts you must deploy central bus stack with parameter `pDeploySlackAlerts=yes` and set `pSendSlackAlerts` value to `yes`.
+
+```bash
+aws cloudformation deploy \
+    --template-file org-sec-alerts-general-alerts.yaml \
+    --stack-name org-sec-alerts-general-alerts \
+    --parameter-overrides \
+        pSendEmailAlerts=yes \
+        pSendSlackAlerts=yes
+```
+
+### Step 3: Deploy `org-sec-alerts-event-fwding.yaml`
 ---
 
 - To deploy using StackSet template:
@@ -124,6 +139,8 @@ aws cloudformation deploy \
   - `org-sec-alerts-dlq`                          - DLQ SQS queue
   - `org-sec-alerts-slack-channel`                - AWS Chatbot Slack channel configuration
   - `org-sec-alerts-slack-channel-role`           - IAM role for AWS Chatbot Slack channel
+
+- `org-sec-alerts-general-alerts.yaml` deploys:
   - `org-sec-alerts-root-signin-rule`             - EventBridge Rule
   - `org-sec-alerts-root-iam-rule`                - EventBridge Rule
   - `org-sec-alerts-root-sts-rule`                - EventBridge Rule

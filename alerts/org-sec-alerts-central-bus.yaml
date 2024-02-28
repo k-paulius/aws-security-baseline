@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: 'Organization wide security event bus and alerts'
+Description: 'Organization wide security event bus'
 
 Parameters:
 
@@ -249,285 +249,6 @@ Resources:
               ArnLike:
                 aws:SourceArn: !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-*'
 
-  rOrgSecAlertsRootSigninRule:
-    Type: AWS::Events::Rule
-    Condition: cDeployAlerts
-    Properties:
-      Name: 'org-sec-alerts-root-signin-rule'
-      Description: 'Listens for root user events from the "signin" event source'
-      EventBusName: !GetAtt rOrgSecEventBus.Arn
-      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
-      EventPattern:
-        source:
-          - 'aws.signin'
-        detail-type:
-          - 'AWS Console Sign In via CloudTrail'
-        detail:
-          userIdentity:
-            $or:
-              - type:
-                  - 'Root'
-              - sessionContext:
-                  sessionIssuer:
-                    type:
-                      - 'Root'
-          eventName:
-            - 'ConsoleLogin'
-            - 'GetSigninToken'
-            - 'PasswordRecoveryRequested'
-            - 'PasswordRecoveryCompleted'
-            - 'EmailUpdated'
-            - 'PasswordUpdated'
-      Targets:
-        - !If
-          - cDeployEmailAlerts
-          - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
-            Arn: !Ref rCriticalOrgSecEmailAlertsSNSTopic
-            DeadLetterConfig:
-              Arn: !GetAtt rOrgSecAlertsDLQQueue.Arn
-            InputTransformer:
-              InputPathsMap:
-                LoginTo: $.detail.additionalEventData.LoginTo
-                MFAUsed: $.detail.additionalEventData.MFAUsed
-                MobileVersion: $.detail.additionalEventData.MobileVersion
-                accountId: $.detail.userIdentity.accountId
-                arn: $.detail.userIdentity.arn
-                awsRegion: $.detail.awsRegion
-                eventID: $.detail.eventID
-                eventName: $.detail.eventName
-                eventTime: $.detail.eventTime
-                principalId: $.detail.userIdentity.principalId
-                sourceIPAddress: $.detail.sourceIPAddress
-                userAgent: $.detail.userAgent
-                userIdentityType: $.detail.userIdentity.type
-                response: $.detail.responseElements[*]
-                accessKeyId: $.detail.userIdentity.accessKeyId
-                eventSource: $.detail.eventSource
-
-              InputTemplate: |
-                "----- ALERT | USER: <userIdentityType> | EVENT: signin:<eventName> | RESPONSE: <response> -----"
-
-                "Account Id.........: <accountId>"
-                "ARN................: <arn>"
-                "Principal Id.......: <principalId>"
-                "Access Key Id......: <accessKeyId>"
-                "Event Time.........: <eventTime>"
-                "Region.............: <awsRegion>"
-                "IP Address.........: <sourceIPAddress>"
-                "User Agent.........: <userAgent>"
-                "MFA Used...........: <MFAUsed>"
-                "Mobile Version.....: <MobileVersion>"
-                "Event Source.......: <eventSource>"
-                "CloudTrail Event ID: <eventID>"
-                "URL: <LoginTo>"
-          - !Ref 'AWS::NoValue'
-        - !If
-          - cDeploySlackAlerts
-          - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
-            Arn: !Ref rCriticalOrgSecSlackAlertsSNSTopic
-            DeadLetterConfig:
-              Arn: !GetAtt rOrgSecAlertsDLQQueue.Arn
-          - !Ref 'AWS::NoValue'
-
-  rOrgSecAlertsRootIAMRule:
-    Type: AWS::Events::Rule
-    Condition: cDeployAlerts
-    Properties:
-      Name: 'org-sec-alerts-root-iam-rule'
-      Description: 'Listens for root user events from the "iam" event source'
-      EventBusName: !GetAtt rOrgSecEventBus.Arn
-      State: ENABLED
-      EventPattern:
-        source:
-          - 'aws.iam'
-        detail-type:
-          - 'AWS API Call via CloudTrail'
-        detail:
-          userIdentity:
-            type:
-              - 'Root'
-          eventName:
-            - 'CreateAccessKey'
-            - 'UpdateAccessKey'
-            - 'DeleteAccessKey'
-            - 'UploadCloudFrontPublicKey'
-            - 'UpdateCloudFrontPublicKey'
-            - 'DeleteCloudFrontPublicKey'
-            - 'UploadSigningCertificate'
-            - 'UpdateSigningCertificate'
-            - 'DeleteSigningCertificate'
-            - 'CreateVirtualMFADevice'
-            - 'DeleteVirtualMFADevice'
-            - 'DeactivateMFADevice'
-            - 'EnableMFADevice'
-            - 'ResyncMFADevice'
-            - 'ChangePassword'
-            - 'UpdateAccountEmailAddress'
-      Targets:
-        - !If
-          - cDeployEmailAlerts
-          - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
-            Arn: !Ref rCriticalOrgSecEmailAlertsSNSTopic
-            DeadLetterConfig:
-              Arn: !GetAtt rOrgSecAlertsDLQQueue.Arn
-            InputTransformer:
-              InputPathsMap:
-                accountId: $.detail.userIdentity.accountId
-                arn: $.detail.userIdentity.arn
-                awsRegion: $.detail.awsRegion
-                eventID: $.detail.eventID
-                eventName: $.detail.eventName
-                eventTime: $.detail.eventTime
-                principalId: $.detail.userIdentity.principalId
-                sourceIPAddress: $.detail.sourceIPAddress
-                userAgent: $.detail.userAgent
-                userIdentityType: $.detail.userIdentity.type
-                accessKeyId: $.detail.userIdentity.accessKeyId
-                eventSource: $.detail.eventSource
-              InputTemplate: |
-                "----- ALERT | USER: <userIdentityType> | EVENT: iam:<eventName> -----"
-
-                "Account Id.........: <accountId>"
-                "ARN................: <arn>"
-                "Principal Id.......: <principalId>"
-                "Access Key Id......: <accessKeyId>"
-                "Event Time.........: <eventTime>"
-                "Region.............: <awsRegion>"
-                "IP Address.........: <sourceIPAddress>"
-                "User Agent.........: <userAgent>"
-                "Event Source.......: <eventSource>"
-                "CloudTrail Event ID: <eventID>"
-          - !Ref 'AWS::NoValue'
-        - !If
-          - cDeploySlackAlerts
-          - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
-            Arn: !Ref rCriticalOrgSecSlackAlertsSNSTopic
-            DeadLetterConfig:
-              Arn: !GetAtt rOrgSecAlertsDLQQueue.Arn
-          - !Ref 'AWS::NoValue'
-
-  rOrgSecAlertsRootSTSRule:
-    Type: AWS::Events::Rule
-    Condition: cDeployAlerts
-    Properties:
-      Name: 'org-sec-alerts-root-sts-rule'
-      Description: 'Listens for root user events from the "sts" event source'
-      EventBusName: !GetAtt rOrgSecEventBus.Arn
-      State: ENABLED
-      EventPattern:
-        source:
-          - 'aws.sts'
-        detail-type:
-          - 'AWS API Call via CloudTrail'
-        detail:
-          userIdentity:
-            type:
-              - 'Root'
-          eventName:
-            - 'GetFederationToken'
-            - 'GetSessionToken'
-      Targets:
-        - !If
-          - cDeployEmailAlerts
-          - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
-            Arn: !Ref rCriticalOrgSecEmailAlertsSNSTopic
-            DeadLetterConfig:
-              Arn: !GetAtt rOrgSecAlertsDLQQueue.Arn
-            InputTransformer:
-              InputPathsMap:
-                accountId: $.detail.userIdentity.accountId
-                arn: $.detail.userIdentity.arn
-                awsRegion: $.detail.awsRegion
-                eventID: $.detail.eventID
-                eventName: $.detail.eventName
-                eventTime: $.detail.eventTime
-                principalId: $.detail.userIdentity.principalId
-                sourceIPAddress: $.detail.sourceIPAddress
-                userAgent: $.detail.userAgent
-                userIdentityType: $.detail.userIdentity.type
-                accessKeyId: $.detail.userIdentity.accessKeyId
-                eventSource: $.detail.eventSource
-              InputTemplate: |
-                "----- ALERT | USER: <userIdentityType> | EVENT: sts:<eventName> -----"
-
-                "Account Id.........: <accountId>"
-                "ARN................: <arn>"
-                "Principal Id.......: <principalId>"
-                "Access Key Id......: <accessKeyId>"
-                "Event Time.........: <eventTime>"
-                "Region.............: <awsRegion>"
-                "IP Address.........: <sourceIPAddress>"
-                "User Agent.........: <userAgent>"
-                "Event Source.......: <eventSource>"
-                "CloudTrail Event ID: <eventID>"
-          - !Ref 'AWS::NoValue'
-        - !If
-          - cDeploySlackAlerts
-          - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
-            Arn: !Ref rCriticalOrgSecSlackAlertsSNSTopic
-            DeadLetterConfig:
-              Arn: !GetAtt rOrgSecAlertsDLQQueue.Arn
-          - !Ref 'AWS::NoValue'
-
-  rOrgSecAlertsAccountRule:
-    Type: AWS::Events::Rule
-    Condition: cDeployAlerts
-    Properties:
-      Name: 'org-sec-alerts-account-rule'
-      Description: 'Listens for events from the "account" event source'
-      EventBusName: !GetAtt rOrgSecEventBus.Arn
-      State: ENABLED
-      EventPattern:
-        source:
-          - 'aws.account'
-        detail-type:
-          - 'AWS API Call via CloudTrail'
-        detail:
-          eventName:
-            - 'PutContactInformation'
-      Targets:
-        - !If
-          - cDeployEmailAlerts
-          - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
-            Arn: !Ref rCriticalOrgSecEmailAlertsSNSTopic
-            DeadLetterConfig:
-              Arn: !GetAtt rOrgSecAlertsDLQQueue.Arn
-            InputTransformer:
-              InputPathsMap:
-                accountId: $.detail.userIdentity.accountId
-                arn: $.detail.userIdentity.arn
-                awsRegion: $.detail.awsRegion
-                eventID: $.detail.eventID
-                eventName: $.detail.eventName
-                eventTime: $.detail.eventTime
-                principalId: $.detail.userIdentity.principalId
-                sourceIPAddress: $.detail.sourceIPAddress
-                userAgent: $.detail.userAgent
-                userIdentityType: $.detail.userIdentity.type
-                accessKeyId: $.detail.userIdentity.accessKeyId
-                eventSource: $.detail.eventSource
-              InputTemplate: |
-                "----- ALERT | USER: <userIdentityType> | EVENT: account:<eventName> -----"
-
-                "Account Id.........: <accountId>"
-                "ARN................: <arn>"
-                "Principal Id.......: <principalId>"
-                "Access Key Id......: <accessKeyId>"
-                "Event Time.........: <eventTime>"
-                "Region.............: <awsRegion>"
-                "IP Address.........: <sourceIPAddress>"
-                "User Agent.........: <userAgent>"
-                "Event Source.......: <eventSource>"
-                "CloudTrail Event ID: <eventID>"
-          - !Ref 'AWS::NoValue'
-        - !If
-          - cDeploySlackAlerts
-          - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
-            Arn: !Ref rCriticalOrgSecSlackAlertsSNSTopic
-            DeadLetterConfig:
-              Arn: !GetAtt rOrgSecAlertsDLQQueue.Arn
-          - !Ref 'AWS::NoValue'
-
 Outputs:
 
   oOrgSecEventBusArn:
@@ -536,6 +257,27 @@ Outputs:
     Export:
       Name: 'org-sec-event-bus-arn'
 
+  oCriticalOrgSecEmailAlertsSNSTopicArn:
+    Condition: cDeployEmailAlerts
+    Description: 'ARN for the SNS Topic for Critical Email Alerts'
+    Value: !GetAtt rCriticalOrgSecEmailAlertsSNSTopic.TopicArn
+    Export:
+      Name: 'org-sec-alerts-crit-email-sns-arn'
+
+  oCriticalOrgSecSlackAlertsSNSTopicArn:
+    Condition: cDeploySlackAlerts
+    Description: 'ARN for the SNS Topic for Critical Slack Alerts'
+    Value: !GetAtt rCriticalOrgSecSlackAlertsSNSTopic.TopicArn
+    Export:
+      Name: 'org-sec-alerts-crit-slack-sns-arn'
+
+  oOrgSecAlertsDLQQueueArn:
+    Condition: cDeployAlerts
+    Description: 'ARN for the SQS Dead Letter Queue'
+    Value: !GetAtt rOrgSecAlertsDLQQueue.Arn
+    Export:
+      Name: 'org-sec-alerts-dlq-sqs-arn'
+
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.7'
+    Value: '1.0.8'
