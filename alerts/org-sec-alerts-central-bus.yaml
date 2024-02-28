@@ -319,17 +319,17 @@ Resources:
               InputTemplate: |
                 "----- ALERT | USER: <userIdentityType> | EVENT: signin:<eventName> | RESPONSE: <response> -----"
 
-                "Account Id: <accountId>"
-                "ARN: <arn>"
-                "Principal Id: <principalId>"
-                "Access Key Id: <accessKeyId>"
-                "Event Time: <eventTime>"
-                "Region: <awsRegion>"
-                "IP Address: <sourceIPAddress>"
-                "User Agent: <userAgent>"
-                "MFA Used: <MFAUsed>"
-                "Mobile Version: <MobileVersion>"
-                "Event Source: <eventSource>"
+                "Account Id.........: <accountId>"
+                "ARN................: <arn>"
+                "Principal Id.......: <principalId>"
+                "Access Key Id......: <accessKeyId>"
+                "Event Time.........: <eventTime>"
+                "Region.............: <awsRegion>"
+                "IP Address.........: <sourceIPAddress>"
+                "User Agent.........: <userAgent>"
+                "MFA Used...........: <MFAUsed>"
+                "Mobile Version.....: <MobileVersion>"
+                "Event Source.......: <eventSource>"
                 "CloudTrail Event ID: <eventID>"
                 "URL: <LoginTo>"
           - !Ref 'AWS::NoValue'
@@ -399,15 +399,15 @@ Resources:
               InputTemplate: |
                 "----- ALERT | USER: <userIdentityType> | EVENT: iam:<eventName> -----"
 
-                "Account Id: <accountId>"
-                "ARN: <arn>"
-                "Principal Id: <principalId>"
-                "Access Key Id: <accessKeyId>"
-                "Event Time: <eventTime>"
-                "Region: <awsRegion>"
-                "IP Address: <sourceIPAddress>"
-                "User Agent: <userAgent>"
-                "Event Source: <eventSource>"
+                "Account Id.........: <accountId>"
+                "ARN................: <arn>"
+                "Principal Id.......: <principalId>"
+                "Access Key Id......: <accessKeyId>"
+                "Event Time.........: <eventTime>"
+                "Region.............: <awsRegion>"
+                "IP Address.........: <sourceIPAddress>"
+                "User Agent.........: <userAgent>"
+                "Event Source.......: <eventSource>"
                 "CloudTrail Event ID: <eventID>"
           - !Ref 'AWS::NoValue'
         - !If
@@ -462,15 +462,15 @@ Resources:
               InputTemplate: |
                 "----- ALERT | USER: <userIdentityType> | EVENT: sts:<eventName> -----"
 
-                "Account Id: <accountId>"
-                "ARN: <arn>"
-                "Principal Id: <principalId>"
-                "Access Key Id: <accessKeyId>"
-                "Event Time: <eventTime>"
-                "Region: <awsRegion>"
-                "IP Address: <sourceIPAddress>"
-                "User Agent: <userAgent>"
-                "Event Source: <eventSource>"
+                "Account Id.........: <accountId>"
+                "ARN................: <arn>"
+                "Principal Id.......: <principalId>"
+                "Access Key Id......: <accessKeyId>"
+                "Event Time.........: <eventTime>"
+                "Region.............: <awsRegion>"
+                "IP Address.........: <sourceIPAddress>"
+                "User Agent.........: <userAgent>"
+                "Event Source.......: <eventSource>"
                 "CloudTrail Event ID: <eventID>"
           - !Ref 'AWS::NoValue'
         - !If
@@ -521,15 +521,15 @@ Resources:
               InputTemplate: |
                 "----- ALERT | USER: <userIdentityType> | EVENT: account:<eventName> -----"
 
-                "Account Id: <accountId>"
-                "ARN: <arn>"
-                "Principal Id: <principalId>"
-                "Access Key Id: <accessKeyId>"
-                "Event Time: <eventTime>"
-                "Region: <awsRegion>"
-                "IP Address: <sourceIPAddress>"
-                "User Agent: <userAgent>"
-                "Event Source: <eventSource>"
+                "Account Id.........: <accountId>"
+                "ARN................: <arn>"
+                "Principal Id.......: <principalId>"
+                "Access Key Id......: <accessKeyId>"
+                "Event Time.........: <eventTime>"
+                "Region.............: <awsRegion>"
+                "IP Address.........: <sourceIPAddress>"
+                "User Agent.........: <userAgent>"
+                "Event Source.......: <eventSource>"
                 "CloudTrail Event ID: <eventID>"
           - !Ref 'AWS::NoValue'
         - !If
@@ -550,4 +550,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.5'
+    Value: '1.0.6'
