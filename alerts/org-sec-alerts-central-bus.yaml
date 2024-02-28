@@ -126,12 +126,8 @@ Resources:
               - sns:Publish
             Resource: !Ref rCriticalOrgSecEmailAlertsSNSTopic
             Condition:
-              ArnEquals:
-                aws:SourceArn:
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-signin-rule'
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-iam-rule'
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-sts-rule'
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-account-rule'
+              ArnLike:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-*'
 
   rCriticalOrgSecEmailAlertsSNSTopicSub:
     Type: AWS::SNS::Subscription
@@ -170,12 +166,8 @@ Resources:
               - sns:Publish
             Resource: !Ref rCriticalOrgSecSlackAlertsSNSTopic
             Condition:
-              ArnEquals:
-                aws:SourceArn:
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-signin-rule'
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-iam-rule'
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-sts-rule'
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-account-rule'
+              ArnLike:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-*'
 
   rChatbotSlackChannel:
     Type: AWS::Chatbot::SlackChannelConfiguration
@@ -254,12 +246,8 @@ Resources:
               - sqs:SendMessage
             Resource: !GetAtt rOrgSecAlertsDLQQueue.Arn
             Condition:
-              ArnEquals:
-                aws:SourceArn:
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-signin-rule'
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-iam-rule'
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-root-sts-rule'
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-account-rule'
+              ArnLike:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-event-bus/org-sec-alerts-*'
 
   rOrgSecAlertsRootSigninRule:
     Type: AWS::Events::Rule
@@ -550,4 +538,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.6'
+    Value: '1.0.7'

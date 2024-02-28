@@ -185,13 +185,8 @@ Resources:
               Service: events.amazonaws.com
             Action: sts:AssumeRole
             Condition:
-              ArnEquals:
-                aws:SourceArn:
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-root-signin-fwd-rule'
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-root-iam-fwd-rule'
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-root-sts-fwd-rule'
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-account-fwd-rule'
-                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-kms-fwd-rule'
+              ArnLike:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-*'
       Policies:
         - PolicyName: put-events
           PolicyDocument:
@@ -214,4 +209,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.4'
+    Value: '1.0.5'
