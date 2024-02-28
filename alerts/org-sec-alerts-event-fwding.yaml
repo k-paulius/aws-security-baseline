@@ -143,6 +143,34 @@ Resources:
           Arn: !Ref pOrgSecEventBus
           RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
 
+  rOrgSecAlertsKMSFwdRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: 'org-sec-alerts-kms-fwd-rule'
+      Description: 'Forwards events from the "kms" event source to the central event bus'
+      EventBusName: default
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.kms'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          eventName:
+            - 'ScheduleKeyDeletion'
+            - 'DisableKey'
+            - 'DisableKeyRotation'
+            - 'PutKeyPolicy'
+            - 'UpdateKeyDescription'
+            - 'TagResource'
+            - 'UntagResource'
+            - 'DeleteAlias'
+            - 'UpdateAlias'
+      Targets:
+        - Id: 'rOrgSecEventBus'
+          Arn: !Ref pOrgSecEventBus
+          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+
   rOrgSecAlertsEventFwdRuleRole:
     Type: AWS::IAM::Role
     Properties:
@@ -163,6 +191,7 @@ Resources:
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-root-iam-fwd-rule'
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-root-sts-fwd-rule'
                   - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-account-fwd-rule'
+                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-kms-fwd-rule'
       Policies:
         - PolicyName: put-events
           PolicyDocument:
@@ -185,4 +214,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.3'
+    Value: '1.0.4'
