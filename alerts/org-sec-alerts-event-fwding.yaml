@@ -200,6 +200,51 @@ Resources:
           Arn: !Ref pOrgSecEventBus
           RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
 
+  rOrgSecAlertsS3FwdRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: 'org-sec-alerts-s3-fwd-rule'
+      Description: 'Forwards events from the "s3" event source to the central event bus'
+      EventBusName: default
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.s3'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          eventName:
+            - 'DeleteBucket'
+            - 'PutBucketEncryption'
+            - 'DeleteBucketEncryption'
+            - 'PutBucketLifecycle'
+            - 'PutBucketIntelligentTieringConfiguration'
+            - 'DeleteBucketIntelligentTieringConfiguration'
+            - 'DeleteBucketLifecycle'
+            - 'PutBucketOwnershipControls'
+            - 'DeleteBucketOwnershipControls'
+            - 'PutBucketPolicy'
+            - 'DeleteBucketPolicy'
+            - 'PutBucketReplication'
+            - 'DeleteBucketReplication'
+            - 'PutBucketTagging'
+            - 'DeleteBucketTagging'
+            - 'PutBucketWebsite'
+            - 'DeleteBucketWebsite'
+            - 'PutBucketCors'
+            - 'DeleteBucketCors'
+            - 'PutBucketPublicAccessBlock'
+            - 'DeleteBucketPublicAccessBlock'
+            - 'PutBucketAcl'
+            - 'PutBucketLogging'
+            - 'PutBucketNotification'
+            - 'PutBucketVersioning'
+            - 'PutBucketObjectLockConfiguration'
+      Targets:
+        - Id: 'rOrgSecEventBus'
+          Arn: !Ref pOrgSecEventBus
+          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+
   rOrgSecAlertsEventFwdRuleRole:
     Type: AWS::IAM::Role
     Properties:
