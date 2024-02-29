@@ -245,6 +245,35 @@ Resources:
           Arn: !Ref pOrgSecEventBus
           RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
 
+  rOrgSecAlertsCloudWatchFwdRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: 'org-sec-alerts-cloudwatch-fwd-rule'
+      Description: 'Forwards events from the "logs" event source to the central event bus'
+      EventBusName: default
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.logs'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          eventName:
+            - 'DeleteLogGroup'
+            - 'DeleteLogStream'
+            - 'AssociateKmsKey'
+            - 'DisassociateKmsKey'
+            - 'PutRetentionPolicy'
+            - 'DeleteRetentionPolicy'
+            - 'PutDataProtectionPolicy'
+            - 'DeleteDataProtectionPolicy'
+            - 'TagResource'
+            - 'UntagResource'
+      Targets:
+        - Id: 'rOrgSecEventBus'
+          Arn: !Ref pOrgSecEventBus
+          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+
   rOrgSecAlertsEventFwdRuleRole:
     Type: AWS::IAM::Role
     Properties:
