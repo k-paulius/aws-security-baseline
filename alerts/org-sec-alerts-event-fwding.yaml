@@ -274,6 +274,33 @@ Resources:
           Arn: !Ref pOrgSecEventBus
           RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
 
+  rOrgSecAlertsSNSFwdRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: 'org-sec-alerts-sns-fwd-rule'
+      Description: 'Forwards events from the "sns" event source to the central event bus'
+      EventBusName: default
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.sns'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          eventName:
+            - 'DeleteTopic'
+            - 'AddPermission'
+            - 'RemovePermission'
+            - 'SetTopicAttributes'
+            - 'Subscribe'
+            - 'Unsubscribe'
+            - 'TagResource'
+            - 'UntagResource'
+      Targets:
+        - Id: 'rOrgSecEventBus'
+          Arn: !Ref pOrgSecEventBus
+          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+
   rOrgSecAlertsEventFwdRuleRole:
     Type: AWS::IAM::Role
     Properties:
