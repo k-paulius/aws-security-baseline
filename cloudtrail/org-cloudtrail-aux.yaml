@@ -138,7 +138,7 @@ Resources:
     DeletionPolicy: RetainExceptOnCreate
     UpdateReplacePolicy: Retain
     Properties:
-      LogGroupName: !Sub 'aws-cloudtrail/${pOrgTrailName}'
+      LogGroupName: !Sub '/aws/cloudtrail/${pOrgTrailName}'
       LogGroupClass: STANDARD
       RetentionInDays: !Ref pOrgTrailLogGroupRetention
       #KmsKeyId: 'String'
@@ -257,4 +257,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.0'
+    Value: '1.0.1'
