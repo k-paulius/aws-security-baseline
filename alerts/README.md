@@ -56,10 +56,14 @@ Currently monitored and alerted activities:
 
 ## Deployment
 
-This solution requires you to deploy three CloudFormation stacks.
-- `org-sec-alerts-central-bus.yaml`. This stack creates a central event bus, SNS queues for email and Slack alerts, SQS dead-letter-queue, and Chatbot Slack channel configuration. This stack should be deployed in the Security Tooling (audit) account.
-- `org-sec-alerts-general-alerts.yaml` - This stack creates general EventBridge rules that forward events to the SNS topics. This stack depends on `org-sec-alerts-central-bus.yaml` stack.
-- `org-sec-alerts-event-fwding.yaml`. This stack creates EventBridge rules that forward events to the central event bus. It needs to be deployed in every relevant account and region. You can do so using your preferred method or the provided StackSet template (`org-sec-alerts-event-fwding-stackset.yaml`).
+- Required stacks:
+  - `org-sec-alerts-central-bus.yaml`. This stack creates a central event bus, SNS queues for email and Slack alerts, SQS dead-letter-queue, and Chatbot Slack channel configuration. This stack should be deployed in the Security Tooling (audit) account.
+  - `org-sec-alerts-event-fwding.yaml`. This stack creates EventBridge rules that forward events to the central event bus. It needs to be deployed in every relevant account and region. You can do so using your preferred method or the provided StackSet template (`org-sec-alerts-event-fwding-stackset.yaml`).
+- Optional alert rule stacks:
+  - `alert-rules/org-sec-alerts-general-alerts.yaml` - This stack sets up EventBridge rules for generating general alerts.
+    - This stack depends on `org-sec-alerts-central-bus.yaml` stack.
+  - `alert-rules/org-sec-alerts-cloudtrail-alerts.yaml` - This stack sets up EventBridge rules to trigger alerts upon detecting changes in CloudTrail or associated resource configurations.
+    - This stack depends on `org-sec-alerts-central-bus.yaml` stack.
 
 ### Step 1: Deploy `org-sec-alerts-central-bus.yaml`
 ---
@@ -84,21 +88,7 @@ aws cloudformation deploy \
         pOwnerNameTag=secops
 ```
 
-### Step 2: Deploy `org-sec-alerts-general-alerts.yaml`
----
-- If you want to receive email alerts you must deploy central bus stack with parameter `pDeployEmailAlerts=yes` and set `pSendEmailAlerts` value to `yes`.
-- If you want to receive Slack alerts you must deploy central bus stack with parameter `pDeploySlackAlerts=yes` and set `pSendSlackAlerts` value to `yes`.
-
-```bash
-aws cloudformation deploy \
-    --template-file org-sec-alerts-general-alerts.yaml \
-    --stack-name org-sec-alerts-general-alerts \
-    --parameter-overrides \
-        pSendEmailAlerts=yes \
-        pSendSlackAlerts=yes
-```
-
-### Step 3: Deploy `org-sec-alerts-event-fwding.yaml`
+### Step 2: Deploy `org-sec-alerts-event-fwding.yaml`
 ---
 
 - To deploy using StackSet template:
@@ -130,6 +120,40 @@ aws cloudformation deploy \
             pOwnerNameTag=secops
     ```
 
+### (Optional) Step 3: Deploy `org-sec-alerts-general-alerts.yaml`
+---
+- If you want to receive email alerts you must deploy central bus stack with parameter `pDeployEmailAlerts=yes` and set `pSendEmailAlerts` value to `yes`.
+- If you want to receive Slack alerts you must deploy central bus stack with parameter `pDeploySlackAlerts=yes` and set `pSendSlackAlerts` value to `yes`.
+
+```bash
+aws cloudformation deploy \
+    --template-file org-sec-alerts-general-alerts.yaml \
+    --stack-name org-sec-alerts-general-alerts \
+    --parameter-overrides \
+        pSendEmailAlerts=yes \
+        pSendSlackAlerts=yes
+```
+
+### (Optional) Step 4: Deploy `org-sec-alerts-cloudtrail-alerts.yaml`
+---
+- If you want to receive email alerts you must deploy central bus stack with parameter `pDeployEmailAlerts=yes` and set `pSendEmailAlerts` value to `yes`.
+- If you want to receive Slack alerts you must deploy central bus stack with parameter `pDeploySlackAlerts=yes` and set `pSendSlackAlerts` value to `yes`.
+
+```bash
+aws cloudformation deploy \
+    --template-file org-sec-alerts-cloudtrail-alerts.yaml \
+    --stack-name org-sec-alerts-cloudtrail-alerts \
+    --parameter-overrides \
+        pSendEmailAlerts=yes \
+        pSendSlackAlerts=yes \
+        pTrailName="org-cloudtrail" \
+        pKMSKeyArn="arn:aws:kms:us-east-1:222222222222:key/ae965708-a783-460a-ae77-fd8f0b8ea511" \
+        pKMSAliasArn="arn:aws:kms:us-east-1:222222222222:alias/org-cloudtrail-key" \
+        pS3BucketArns="arn:aws:s3:::org-cloudtrail-logs-a1b2c3d4e5fg6h7i,arn:aws:s3:::org-cloudtrail-logs-a1b2c3d4e5fg6h7i-access-logs" \
+        pLogGroupName="/aws/cloudtrail/org-cloudtrail" \
+        pTopicArn="arn:aws:sns:us-east-1:222222222222:org-cloudtrail-file-delivery"
+```
+
 ## Deployed Resources
 
 - `org-sec-alerts-central-bus.yaml` deploys:
@@ -140,18 +164,30 @@ aws cloudformation deploy \
   - `org-sec-alerts-slack-channel`                - AWS Chatbot Slack channel configuration
   - `org-sec-alerts-slack-channel-role`           - IAM role for AWS Chatbot Slack channel
 
-- `org-sec-alerts-general-alerts.yaml` deploys:
-  - `org-sec-alerts-root-signin-rule`             - EventBridge Rule
-  - `org-sec-alerts-root-iam-rule`                - EventBridge Rule
-  - `org-sec-alerts-root-sts-rule`                - EventBridge Rule
-  - `org-sec-alerts-account-rule`                 - EventBridge Rule
-
 - `org-sec-alerts-event-fwding.yaml` deploys:
-  - `org-sec-alerts-root-signin-fwd-rule`         - EventBridge Rule
-  - `org-sec-alerts-root-iam-fwd-rule`            - EventBridge Rule
-  - `org-sec-alerts-root-sts-fwd-rule`            - EventBridge Rule
-  - `org-sec-alerts-account-fwd-rule`             - EventBridge Rule
+  - `org-sec-alerts-root-signin-fwd-rule`         - EventBridge event forwarding rule
+  - `org-sec-alerts-root-iam-fwd-rule`            - EventBridge event forwarding rule
+  - `org-sec-alerts-root-sts-fwd-rule`            - EventBridge event forwarding rule
+  - `org-sec-alerts-account-fwd-rule`             - EventBridge event forwarding rule
+  - `org-sec-alerts-kms-fwd-rule`                 - EventBridge event forwarding rule
+  - `org-sec-alerts-cloudtrail-fwd-rule`          - EventBridge event forwarding rule
+  - `org-sec-alerts-s3-fwd-rule`                  - EventBridge event forwarding rule
+  - `org-sec-alerts-cloudwatch-fwd-rule`          - EventBridge event forwarding rule
+  - `org-sec-alerts-sns-fwd-rule`                 - EventBridge event forwarding rule
   - `org-sec-alerts-event-fwd-rule-role`          - EventBridge Rule IAM execution role
 
 - `org-sec-alerts-event-fwding-stackset.yaml` deploys:
   - `org-sec-alerts-event-fwding-stackset`        - StackSet
+
+- `org-sec-alerts-general-alerts.yaml` deploys:
+  - `org-sec-alerts-root-signin-rule`             - EventBridge alert rule
+  - `org-sec-alerts-root-iam-rule`                - EventBridge alert rule
+  - `org-sec-alerts-root-sts-rule`                - EventBridge alert rule
+  - `org-sec-alerts-account-rule`                 - EventBridge alert rule
+
+- `org-sec-alerts-cloudtrail-alerts.yaml` deploys"
+  - `org-sec-alerts-cloudtrail-trail-rule`        - EventBridge alert rule
+  - `org-sec-alerts-cloudtrail-kms-rule`          - EventBridge alert rule
+  - `org-sec-alerts-cloudtrail-s3-rule`           - EventBridge alert rule
+  - `org-sec-alerts-cloudtrail-cloudwatch-rule`   - EventBridge alert rule
+  - `org-sec-alerts-cloudtrail-sns-rule`          - EventBridge alert rule
