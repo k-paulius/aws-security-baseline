@@ -226,24 +226,30 @@ Resources:
 
 Outputs:
 
-  oOrgTrailKeyArn:
+  oOrgTrailKMSKeyArn:
     Description: 'Organization CloudTrail KMS key ARN'
     Value: !GetAtt rOrgTrailKey.Arn
+    Export:
+      Name: 'org-cloudtrail-kms-key-arn'
 
-  oOrgTrailCloudWatchLogGroupName:
+  oOrgTrailCloudWatchLogsLogGroupName:
     Condition: cEnableCloudWatchLogs
     Description: 'Organization CloudTrail CloudWatch Log Group Name'
     Value: !Ref rOrgTrailCloudWatchLogGroup
 
-  oOrgTrailCloudWatchLogGroupArn:
+  oOrgTrailCloudWatchLogsLogGroupArn:
     Condition: cEnableCloudWatchLogs
     Description: 'Organization CloudTrail CloudWatch Log Group Arn'
     Value: !GetAtt rOrgTrailCloudWatchLogGroup.Arn
+    Export:
+      Name: 'org-cloudtrail-cloudwatch-logs-log-group-arn'
 
-  oOrgTrailCloudWatchLogGroupRoleArn:
+  oOrgTrailCloudWatchLogsRoleArn:
     Condition: cEnableCloudWatchLogs
     Description: 'CloudWatch Log Group Role Arn'
     Value: !GetAtt rOrgTrailCloudWatchLogGroupRole.Arn
+    Export:
+      Name: 'org-cloudtrail-cloudwatch-logs-role-arn'
 
   oOrgTrailSNSTopicName:
     Condition: cEnableSNSTopic
@@ -254,7 +260,9 @@ Outputs:
     Condition: cEnableSNSTopic
     Description: 'Organization CloudTrail SNS Topic Arn'
     Value: !GetAtt rOrgTrailSNSTopic.TopicArn
+    Export:
+      Name: 'org-cloudtrail-sns-topic-arn'
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.1'
+    Value: '1.0.2'
