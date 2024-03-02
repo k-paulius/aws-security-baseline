@@ -236,14 +236,14 @@ Outputs:
     Description: 'Organization CloudTrail S3 Bucket Name'
     Value: !Ref rOrgTrailBucket
     Export:
-      Name: 'org-cloudtrail-bucket-name'
+      Name: !Sub '${AWS::StackName}-bucket-name'
 
   oOrgTrailBucketArn:
     Description: 'Organization CloudTrail S3 Bucket Arn'
     Value: !GetAtt rOrgTrailBucket.Arn
     Export:
-      Name: 'org-cloudtrail-bucket-arn'
+      Name: !Sub '${AWS::StackName}-bucket-arn'
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.1'
+    Value: '1.0.2'

@@ -255,29 +255,29 @@ Outputs:
     Description: 'Organization wide security event bus ARN'
     Value: !GetAtt rOrgSecEventBus.Arn
     Export:
-      Name: 'org-sec-event-bus-arn'
+      Name: !Sub '${AWS::StackName}-event-bus-arn'
 
   oCriticalOrgSecEmailAlertsSNSTopicArn:
     Condition: cDeployEmailAlerts
     Description: 'ARN for the SNS Topic for Critical Email Alerts'
     Value: !GetAtt rCriticalOrgSecEmailAlertsSNSTopic.TopicArn
     Export:
-      Name: 'org-sec-alerts-crit-email-sns-arn'
+      Name: !Sub '${AWS::StackName}-crit-email-sns-arn'
 
   oCriticalOrgSecSlackAlertsSNSTopicArn:
     Condition: cDeploySlackAlerts
     Description: 'ARN for the SNS Topic for Critical Slack Alerts'
     Value: !GetAtt rCriticalOrgSecSlackAlertsSNSTopic.TopicArn
     Export:
-      Name: 'org-sec-alerts-crit-slack-sns-arn'
+      Name: !Sub '${AWS::StackName}-crit-slack-sns-arn'
 
   oOrgSecAlertsDLQQueueArn:
     Condition: cDeployAlerts
     Description: 'ARN for the SQS Dead Letter Queue'
     Value: !GetAtt rOrgSecAlertsDLQQueue.Arn
     Export:
-      Name: 'org-sec-alerts-dlq-sqs-arn'
+      Name: !Sub '${AWS::StackName}-dlq-sqs-arn'
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.8'
+    Value: '1.0.9'
