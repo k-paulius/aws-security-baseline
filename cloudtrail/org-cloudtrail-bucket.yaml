@@ -244,6 +244,18 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-bucket-arn'
 
+  oOrgTrailAccessLoggingBucketName:
+    Description: 'Organization CloudTrail S3 Access Logs Bucket Name'
+    Value: !Ref rOrgTrailAccessLoggingBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-access-logs-bucket-name'
+
+  oOrgTrailAccessLoggingBucketArn:
+    Description: 'Organization CloudTrail S3 Access Logs Bucket Arn'
+    Value: !GetAtt rOrgTrailAccessLoggingBucket.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-access-logs-bucket-arn'
+
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.2'
+    Value: '1.0.3'

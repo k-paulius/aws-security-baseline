@@ -227,15 +227,23 @@ Resources:
 Outputs:
 
   oOrgTrailKMSKeyArn:
-    Description: 'Organization CloudTrail KMS key ARN'
+    Description: 'Organization CloudTrail KMS Key ARN'
     Value: !GetAtt rOrgTrailKey.Arn
     Export:
       Name: !Sub '${AWS::StackName}-kms-key-arn'
+
+  oOrgTrailKeyAliasName:
+    Description: 'Organization CloudTrail KMS Key Alias Name'
+    Value: !Ref rOrgTrailKeyAlias
+    Export:
+      Name: !Sub '${AWS::StackName}-kms-key-alias-name'
 
   oOrgTrailCloudWatchLogsLogGroupName:
     Condition: cEnableCloudWatchLogs
     Description: 'Organization CloudTrail CloudWatch Log Group Name'
     Value: !Ref rOrgTrailCloudWatchLogGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-cloudwatch-logs-log-group-name'
 
   oOrgTrailCloudWatchLogsLogGroupArn:
     Condition: cEnableCloudWatchLogs
@@ -265,4 +273,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.3'
+    Value: '1.0.4'
