@@ -33,6 +33,10 @@ Parameters:
     Type: String
     Default: ''
 
+  pCentralBusStackName:
+    Description: 'Central Bus Stack Name'
+    Type: String
+
   pSendEmailAlerts:
     Description: 'Send e-mail alerts?'
     Type: String
@@ -79,7 +83,7 @@ Resources:
     Properties:
       Name: 'org-sec-alerts-cloudtrail-trail-rule'
       Description: 'CloudTrail trail config change alerts'
-      EventBusName: !ImportValue 'org-sec-event-bus-arn'
+      EventBusName: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-event-bus-arn'}
       State: ENABLED
       EventPattern:
         source:
@@ -111,9 +115,9 @@ Resources:
         - !If
           - cDeployEmailAlerts
           - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
-            Arn: !ImportValue 'org-sec-alerts-crit-email-sns-arn'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-email-sns-arn'}
             DeadLetterConfig:
-              Arn: !ImportValue 'org-sec-alerts-dlq-sqs-arn'
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
             InputTransformer:
               InputPathsMap:
                 accountId: $.detail.userIdentity.accountId
@@ -153,9 +157,9 @@ Resources:
         - !If
           - cDeploySlackAlerts
           - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
-            Arn: !ImportValue 'org-sec-alerts-crit-slack-sns-arn'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-slack-sns-arn'}
             DeadLetterConfig:
-              Arn: !ImportValue 'org-sec-alerts-dlq-sqs-arn'
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
           - !Ref 'AWS::NoValue'
 
   rOrgSecAlertsKMSRule:
@@ -164,7 +168,7 @@ Resources:
     Properties:
       Name: 'org-sec-alerts-cloudtrail-kms-rule'
       Description: 'CloudTrail KMS config change alerts'
-      EventBusName: !ImportValue 'org-sec-event-bus-arn'
+      EventBusName: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-event-bus-arn'}
       State: ENABLED
       EventPattern:
         source:
@@ -202,9 +206,9 @@ Resources:
         - !If
           - cDeployEmailAlerts
           - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
-            Arn: !ImportValue 'org-sec-alerts-crit-email-sns-arn'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-email-sns-arn'}
             DeadLetterConfig:
-              Arn: !ImportValue 'org-sec-alerts-dlq-sqs-arn'
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
             InputTransformer:
               InputPathsMap:
                 accountId: $.detail.userIdentity.accountId
@@ -244,9 +248,9 @@ Resources:
         - !If
           - cDeploySlackAlerts
           - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
-            Arn: !ImportValue 'org-sec-alerts-crit-slack-sns-arn'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-slack-sns-arn'}
             DeadLetterConfig:
-              Arn: !ImportValue 'org-sec-alerts-dlq-sqs-arn'
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
           - !Ref 'AWS::NoValue'
 
   rOrgSecAlertsS3Rule:
@@ -255,7 +259,7 @@ Resources:
     Properties:
       Name: 'org-sec-alerts-cloudtrail-s3-rule'
       Description: 'CloudTrail S3 bucket config change alerts'
-      EventBusName: !ImportValue 'org-sec-event-bus-arn'
+      EventBusName: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-event-bus-arn'}
       State: ENABLED
       EventPattern:
         source:
@@ -296,9 +300,9 @@ Resources:
         - !If
           - cDeployEmailAlerts
           - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
-            Arn: !ImportValue 'org-sec-alerts-crit-email-sns-arn'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-email-sns-arn'}
             DeadLetterConfig:
-              Arn: !ImportValue 'org-sec-alerts-dlq-sqs-arn'
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
             InputTransformer:
               InputPathsMap:
                 accountId: $.detail.userIdentity.accountId
@@ -336,9 +340,9 @@ Resources:
         - !If
           - cDeploySlackAlerts
           - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
-            Arn: !ImportValue 'org-sec-alerts-crit-slack-sns-arn'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-slack-sns-arn'}
             DeadLetterConfig:
-              Arn: !ImportValue 'org-sec-alerts-dlq-sqs-arn'
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
           - !Ref 'AWS::NoValue'
 
   rOrgSecAlertsCloudWatchRule:
@@ -347,7 +351,7 @@ Resources:
     Properties:
       Name: 'org-sec-alerts-cloudtrail-cloudwatch-rule'
       Description: 'CloudTrail CloudWatch Logs config change alerts'
-      EventBusName: !ImportValue 'org-sec-event-bus-arn'
+      EventBusName: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-event-bus-arn'}
       State: ENABLED
       EventPattern:
         source:
@@ -377,9 +381,9 @@ Resources:
         - !If
           - cDeployEmailAlerts
           - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
-            Arn: !ImportValue 'org-sec-alerts-crit-email-sns-arn'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-email-sns-arn'}
             DeadLetterConfig:
-              Arn: !ImportValue 'org-sec-alerts-dlq-sqs-arn'
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
             InputTransformer:
               InputPathsMap:
                 accountId: $.detail.userIdentity.accountId
@@ -418,9 +422,9 @@ Resources:
         - !If
           - cDeploySlackAlerts
           - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
-            Arn: !ImportValue 'org-sec-alerts-crit-slack-sns-arn'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-slack-sns-arn'}
             DeadLetterConfig:
-              Arn: !ImportValue 'org-sec-alerts-dlq-sqs-arn'
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
           - !Ref 'AWS::NoValue'
 
   rOrgSecAlertsSNSRule:
@@ -429,7 +433,7 @@ Resources:
     Properties:
       Name: 'org-sec-alerts-cloudtrail-sns-rule'
       Description: 'CloudTrail SNS config change alerts'
-      EventBusName: !ImportValue 'org-sec-event-bus-arn'
+      EventBusName: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-event-bus-arn'}
       State: ENABLED
       EventPattern:
         source:
@@ -461,9 +465,9 @@ Resources:
         - !If
           - cDeployEmailAlerts
           - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
-            Arn: !ImportValue 'org-sec-alerts-crit-email-sns-arn'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-email-sns-arn'}
             DeadLetterConfig:
-              Arn: !ImportValue 'org-sec-alerts-dlq-sqs-arn'
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
             InputTransformer:
               InputPathsMap:
                 accountId: $.detail.userIdentity.accountId
@@ -503,13 +507,13 @@ Resources:
         - !If
           - cDeploySlackAlerts
           - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
-            Arn: !ImportValue 'org-sec-alerts-crit-slack-sns-arn'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-slack-sns-arn'}
             DeadLetterConfig:
-              Arn: !ImportValue 'org-sec-alerts-dlq-sqs-arn'
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
           - !Ref 'AWS::NoValue'
 
 Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.0'
+    Value: '1.0.1'

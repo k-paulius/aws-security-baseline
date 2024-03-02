@@ -130,6 +130,7 @@ aws cloudformation deploy \
     --template-file org-sec-alerts-general-alerts.yaml \
     --stack-name org-sec-alerts-general-alerts \
     --parameter-overrides \
+        pCentralBusStackName="org-sec-alerts-central-bus" \
         pSendEmailAlerts=yes \
         pSendSlackAlerts=yes
 ```
@@ -144,6 +145,7 @@ aws cloudformation deploy \
     --template-file org-sec-alerts-cloudtrail-alerts.yaml \
     --stack-name org-sec-alerts-cloudtrail-alerts \
     --parameter-overrides \
+        pCentralBusStackName="org-sec-alerts-central-bus" \
         pSendEmailAlerts=yes \
         pSendSlackAlerts=yes \
         pTrailName="org-cloudtrail" \
