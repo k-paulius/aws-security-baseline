@@ -206,6 +206,24 @@ Resources:
               ArnEquals:
                 aws:SourceArn: !Sub 'arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${pManagementAccountId}:trail/${pOrgTrailName}'
 
+          - Sid: DenyUnencryptedObjectUploads
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:PutObject'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${rOrgTrailBucket}/*'
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption: 'aws:kms'
+
+          - Sid: DenyWrongKMSKey
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:PutObject'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${rOrgTrailBucket}/*'
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption-aws-kms-key-id: !Sub ${pOrgTrailKeyArn}
+
           - Sid: RestrictToTLSRequestsOnly
             Effect: Deny
             Principal: '*'
@@ -258,4 +276,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.3'
+    Value: '1.0.4'
