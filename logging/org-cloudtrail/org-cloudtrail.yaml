@@ -113,7 +113,9 @@ Outputs:
   oOrgTrailArn:
     Description: 'Organization CloudTrail Arn'
     Value: !GetAtt rOrgTrail.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-trail-arn'
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.0'
+    Value: '1.0.1'
