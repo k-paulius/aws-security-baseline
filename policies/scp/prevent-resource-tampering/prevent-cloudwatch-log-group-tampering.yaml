@@ -9,10 +9,10 @@ Parameters:
     Default: 'PreventCloudWatchLogGroupTampering'
 
   pCloudWatchLogsLogGroupArn:
-    Description: 'Amazon CloudWatch Logs Log Group ARN (Note: DO NOT INCLUDE ":*" at the end)'
+    Description: 'Amazon CloudWatch Logs Log Group ARN. (Example: arn:aws:logs:us-east-1:123456789012:log-group:group-name:*)'
     Type: String
-    AllowedPattern: '^arn:[a-z0-9-]+:logs:[a-z0-9-]+:\d{12}:log-group:[a-zA-Z0-9_\-\/.$]+$'
-    ConstraintDescription: 'Must provide a valid Log Group ARN WITHOUT ":*" suffix. Example: arn:aws:logs:us-east-1:123456789012:log-group:group-name'
+    AllowedPattern: '^arn:[a-z0-9-]+:logs:[a-z0-9-]+:\d{12}:log-group:[a-zA-Z0-9_\-\/.$]+:\*$'
+    ConstraintDescription: 'Must provide a valid Log Group ARN. Example: arn:aws:logs:us-east-1:123456789012:log-group:group-name:*'
 
   pTargetIds:
     Type: String
@@ -40,14 +40,25 @@ Resources:
               - 'logs:PutRetentionPolicy'
               - 'logs:DeleteRetentionPolicy'
             Resource:
-              - !Sub '${pCloudWatchLogsLogGroupArn}:*'
+              - !Ref pCloudWatchLogsLogGroupArn
           - Sid: PreventCloudWatchLogGroupTagTampering
             Effect: Deny
             Action:
               - 'logs:TagResource'
               - 'logs:UntagResource'
             Resource:
-              - !Ref pCloudWatchLogsLogGroupArn
+              - !Join [
+                  ':',
+                  [
+                    !Select [0, !Split [':', !Ref pCloudWatchLogsLogGroupArn]],
+                    !Select [1, !Split [':', !Ref pCloudWatchLogsLogGroupArn]],
+                    !Select [2, !Split [':', !Ref pCloudWatchLogsLogGroupArn]],
+                    !Select [3, !Split [':', !Ref pCloudWatchLogsLogGroupArn]],
+                    !Select [4, !Split [':', !Ref pCloudWatchLogsLogGroupArn]],
+                    !Select [5, !Split [':', !Ref pCloudWatchLogsLogGroupArn]],
+                    !Select [6, !Split [':', !Ref pCloudWatchLogsLogGroupArn]]
+                  ]
+                ]
       TargetIds:
         - !Ref pTargetIds
 
@@ -55,4 +66,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.0'
+    Value: '1.0.1'
