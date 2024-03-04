@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'SCP: Prevent KMS Key Tampering'
+
+Parameters:
+
+  pPolicyName:
+    Description: 'Policy Name'
+    Type: String
+    Default: 'PreventKMSKeyTampering'
+
+  pKMSKeyArn:
+    Description: 'AWS KMS Key ARN'
+    Type: String
+
+  pKMSKeyAliasArn:
+    Description: 'AWS KMS Key Alias ARN'
+    Type: String
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rPolicy:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: !Ref pPolicyName
+      Description: 'Prevent KMS Key Tampering'
+      Content:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PreventKMSKeyTampering
+            Effect: Deny
+            Action:
+              - 'kms:ScheduleKeyDeletion'
+              - 'kms:DisableKey'
+              - 'kms:DisableKeyRotation'
+              - 'kms:EnableKeyRotation'
+              - 'kms:PutKeyPolicy'
+              - 'kms:UpdateKeyDescription'
+              - 'kms:TagResource'
+              - 'kms:UntagResource'
+            Resource:
+              - !Ref pKMSKeyArn
+          - Sid: PreventKMSAliasTampering
+            Effect: Deny
+            Action:
+              - 'kms:DeleteAlias'
+              - 'kms:UpdateAlias'
+            Resource:
+              - !Ref pKMSKeyAliasArn
+      TargetIds:
+        - !Ref pTargetIds
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

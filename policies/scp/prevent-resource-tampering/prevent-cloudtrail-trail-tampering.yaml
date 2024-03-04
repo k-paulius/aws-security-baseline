@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'SCP: Prevent CloudTrail Trail Tampering'
+
+Parameters:
+
+  pPolicyName:
+    Description: 'Policy Name'
+    Type: String
+    Default: 'PreventCloudTrailTrailTampering'
+
+  pCloudTrailTrailArn:
+    Description: 'AWS CloudTrail Trail ARN'
+    Type: String
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rPolicy:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: !Ref pPolicyName
+      Description: 'Prevent CloudTrail Trail Tampering'
+      Content:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PreventCloudTrailTrailTampering
+            Effect: Deny
+            Action:
+              - 'cloudtrail:AddTags'
+              - 'cloudtrail:RemoveTags'
+              - 'cloudtrail:DeleteTrail'
+              - 'cloudtrail:UpdateTrail'
+              - 'cloudtrail:StopLogging'
+              - 'cloudtrail:StartLogging'
+              - 'cloudtrail:PutEventSelectors'
+              - 'cloudtrail:PutInsightSelectors'
+            Resource:
+              - !Ref pCloudTrailTrailArn
+      TargetIds:
+        - !Ref pTargetIds
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

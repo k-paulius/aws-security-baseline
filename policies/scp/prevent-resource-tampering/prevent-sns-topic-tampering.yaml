@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'SCP: Prevent SNS Topic Tampering'
+
+Parameters:
+
+  pPolicyName:
+    Description: 'Policy Name'
+    Type: String
+    Default: 'PreventSNSTopicTampering'
+
+  pSNSTopicArn:
+    Description: 'Amazon SNS Topic ARN'
+    Type: String
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rPolicy:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: !Ref pPolicyName
+      Description: 'Prevent SNS Topic Tampering'
+      Content:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PreventSNSTopicTampering
+            Effect: Deny
+            Action:
+              - 'sns:DeleteTopic'
+              - 'sns:AddPermission'
+              - 'sns:RemovePermission'
+              - 'sns:SetTopicAttributes'
+              - 'sns:Subscribe'
+              - 'sns:Unsubscribe'
+              - 'sns:TagResource'
+              - 'sns:UntagResource'
+            Resource:
+              - !Ref pSNSTopicArn
+      TargetIds:
+        - !Ref pTargetIds
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

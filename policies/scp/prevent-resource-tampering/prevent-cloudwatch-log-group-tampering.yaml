@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'SCP: Prevent CloudWatch Logs Log Group Tampering'
+
+Parameters:
+
+  pPolicyName:
+    Description: 'Policy Name'
+    Type: String
+    Default: 'PreventCloudWatchLogGroupTampering'
+
+  pCloudWatchLogsLogGroupArn:
+    Description: 'Amazon CloudWatch Logs Log Group ARN (Note: DO NOT INCLUDE ":*" at the end)'
+    Type: String
+    AllowedPattern: '^arn:[a-z0-9-]+:logs:[a-z0-9-]+:\d{12}:log-group:[a-zA-Z0-9_\-\/.$]+$'
+    ConstraintDescription: 'Must provide a valid Log Group ARN WITHOUT ":*" suffix. Example: arn:aws:logs:us-east-1:123456789012:log-group:group-name'
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rPolicy:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: !Ref pPolicyName
+      Description: 'Prevent CloudWatch Logs Log Group Tampering'
+      Content:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PreventCloudWatchLogGroupTampering
+            Effect: Deny
+            Action:
+              - 'logs:DeleteLogGroup'
+              - 'logs:DeleteLogStream'
+              - 'logs:AssociateKmsKey'
+              - 'logs:DisassociateKmsKey'
+              - 'logs:PutRetentionPolicy'
+              - 'logs:DeleteRetentionPolicy'
+            Resource:
+              - !Sub '${pCloudWatchLogsLogGroupArn}:*'
+          - Sid: PreventCloudWatchLogGroupTagTampering
+            Effect: Deny
+            Action:
+              - 'logs:TagResource'
+              - 'logs:UntagResource'
+            Resource:
+              - !Ref pCloudWatchLogsLogGroupArn
+      TargetIds:
+        - !Ref pTargetIds
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
