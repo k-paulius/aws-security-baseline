@@ -15,44 +15,74 @@ Alerts can be delivered via email and/or Slack. You can choose alert delivery me
 
 Currently monitored and alerted activities:
 
-- Root user console sign in attempts: successes and failures
+- Root user console sign in attempts: successes and failures (`org-sec-alerts-general-alerts.yaml`)
   - `signin:ConsoleLogin`
-- Root user federated console session (sign in)
+- Root user federated console session (sign in) (`org-sec-alerts-general-alerts.yaml`)
   - `sts:GetFederationToken`
   - `signin:GetSigninToken`
   - `signin:ConsoleSignin`
-- Root user password recovery
+- Root user password recovery (`org-sec-alerts-general-alerts.yaml`)
   - `signin:PasswordRecoveryRequested`
   - `signin:PasswordRecoveryCompleted`
-- Root user access key creation, deletion, updates
+- Root user access key creation, deletion, updates (`org-sec-alerts-general-alerts.yaml`)
   - `iam:CreateAccessKey`
   - `iam:DeleteAccessKey`
   - `iam:UpdateAccessKey`
-- Root user temporary security credential creation
+- Root user temporary security credential creation (`org-sec-alerts-general-alerts.yaml`)
   - `sts:GetSessionToken`
   - `sts:GetFederationToken`
-- Root user MFA device actions
+- Root user MFA device actions (`org-sec-alerts-general-alerts.yaml`)
   - `iam:CreateVirtualMFADevice`
   - `iam:DeleteVirtualMFADevice`
   - `iam:DeactivateMFADevice`
   - `iam:EnableMFADevice`
   - `iam:ResyncMFADevice`
-- Root user (account) email change
+- Root user (account) email change (`org-sec-alerts-general-alerts.yaml`)
   - `iam:UpdateAccountEmailAddress`
   - `signin:EmailUpdated`
-- Root user password change
+- Root user password change (`org-sec-alerts-general-alerts.yaml`)
   - `iam:ChangePassword`
   - `signin:PasswordUpdated`
-- Root user CloudFront key pair creation, deletion, updates
+- Root user CloudFront key pair creation, deletion, updates (`org-sec-alerts-general-alerts.yaml`)
   - `iam:UploadCloudFrontPublicKey`
   - `iam:DeleteCloudFrontPublicKey`
   - `iam:UpdateCloudFrontPublicKey`
-- Root user X.509 Signing certificate creation, deletion, updates
+- Root user X.509 Signing certificate creation, deletion, updates (`org-sec-alerts-general-alerts.yaml`)
   - `iam:UploadSigningCertificate`
   - `iam:DeleteSigningCertificate`
   - `iam:UpdateSigningCertificate`
-- Account contact information change: phone number, address, name
+- Account contact information change: phone number, address, name (`org-sec-alerts-general-alerts.yaml`)
   - `account:PutContactInformation`
+- AWS Organizations configuration changes (`org-sec-alerts-general-alerts.yaml`)
+  - `organizations:CreateAccount`
+  - `organizations:CreateGovCloudAccount`
+  - `organizations:MoveAccount`
+  - `organizations:CloseAccount`
+  - `organizations:RemoveAccountFromOrganization`
+  - `organizations:InviteAccountToOrganization`
+  - `organizations:LeaveOrganization`
+  - `organizations:CreateOrganization`
+  - `organizations:DeleteOrganization`
+  - `organizations:CreateOrganizationalUnit`
+  - `organizations:DeleteOrganizationalUnit`
+  - `organizations:UpdateOrganizationalUnit`
+  - `organizations:RegisterDelegatedAdministrator`
+  - `organizations:DeregisterDelegatedAdministrator`
+  - `organizations:EnableAllFeatures`
+  - `organizations:EnableAWSServiceAccess`
+  - `organizations:DisableAWSServiceAccess`
+  - `organizations:AcceptHandshake`
+  - `organizations:CancelHandshake`
+  - `organizations:DeclineHandshake`
+  - `organizations:CreatePolicy`
+  - `organizations:UpdatePolicy`
+  - `organizations:DeletePolicy`
+  - `organizations:AttachPolicy`
+  - `organizations:DetachPolicy`
+  - `organizations:EnablePolicyType`
+  - `organizations:DisablePolicyType`
+  - `organizations:TagResource`
+  - `organizations:UntagResource`
 
 ## Deployment
 
