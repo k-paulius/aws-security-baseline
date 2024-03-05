@@ -310,8 +310,104 @@ Resources:
               Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
           - !Ref 'AWS::NoValue'
 
+  rOrgSecAlertsOrganizationsRule:
+    Type: AWS::Events::Rule
+    Condition: cDeployAlerts
+    Properties:
+      Name: 'org-sec-alerts-organizations-rule'
+      Description: 'AWS Organizations config change alerts'
+      EventBusName: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-event-bus-arn'}
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.organizations'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          eventName:
+            - 'CreateAccount'
+            - 'CreateGovCloudAccount'
+            - 'MoveAccount'
+            - 'CloseAccount'
+            - 'RemoveAccountFromOrganization'
+            - 'InviteAccountToOrganization'
+            - 'LeaveOrganization'
+            - 'CreateOrganization'
+            - 'DeleteOrganization'
+            - 'CreateOrganizationalUnit'
+            - 'DeleteOrganizationalUnit'
+            - 'UpdateOrganizationalUnit'
+            - 'RegisterDelegatedAdministrator'
+            - 'DeregisterDelegatedAdministrator'
+            - 'EnableAllFeatures'
+            - 'EnableAWSServiceAccess'
+            - 'DisableAWSServiceAccess'
+            - 'AcceptHandshake'
+            - 'CancelHandshake'
+            - 'DeclineHandshake'
+            - 'CreatePolicy'
+            - 'UpdatePolicy'
+            - 'DeletePolicy'
+            - 'AttachPolicy'
+            - 'DetachPolicy'
+            - 'EnablePolicyType'
+            - 'DisablePolicyType'
+            - 'TagResource'
+            - 'UntagResource'
+      Targets:
+        - !If
+          - cDeployEmailAlerts
+          - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-email-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+            InputTransformer:
+              InputPathsMap:
+                accountId: $.detail.userIdentity.accountId
+                arn: $.detail.userIdentity.arn
+                awsRegion: $.detail.awsRegion
+                eventID: $.detail.eventID
+                eventName: $.detail.eventName
+                eventTime: $.detail.eventTime
+                principalId: $.detail.userIdentity.principalId
+                sourceIPAddress: $.detail.sourceIPAddress
+                userAgent: $.detail.userAgent
+                userIdentityType: $.detail.userIdentity.type
+                accessKeyId: $.detail.userIdentity.accessKeyId
+                eventSource: $.detail.eventSource
+                resource1: $.detail.requestParameters.name
+                resource2: $.detail.requestParameters.organizationalUnitId
+                resource3: $.detail.requestParameters.policyType
+                resource4: $.detail.requestParameters.policyId
+                errorCode: $.detail.errorCode
+                errorMessage: $.detail.errorMessage
+              InputTemplate: |
+                "----- ALERT | USER: <userIdentityType> | EVENT: organizations:<eventName> -----"
+
+                "Account Id.........: <accountId>"
+                "ARN................: <arn>"
+                "Principal Id.......: <principalId>"
+                "Access Key Id......: <accessKeyId>"
+                "Event Time.........: <eventTime>"
+                "Region.............: <awsRegion>"
+                "IP Address.........: <sourceIPAddress>"
+                "User Agent.........: <userAgent>"
+                "Event Source.......: <eventSource>"
+                "CloudTrail Event ID: <eventID>"
+                "Resources Id.......: <resource1><resource2><resource3><resource4>"
+                "Error Code.........: <errorCode>"
+                "Error Message......: <errorMessage>"
+          - !Ref 'AWS::NoValue'
+        - !If
+          - cDeploySlackAlerts
+          - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-slack-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+          - !Ref 'AWS::NoValue'
+
 Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.1'
+    Value: '1.0.2'
