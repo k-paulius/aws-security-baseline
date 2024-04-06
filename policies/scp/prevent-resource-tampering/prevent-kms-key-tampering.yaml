@@ -45,6 +45,10 @@ Resources:
               - 'kms:UntagResource'
             Resource:
               - !Ref pKMSKeyArn
+            Condition:
+              ArnNotLike:
+                'aws:PrincipalArn':
+                  - 'arn:aws:iam::*:role/[AUTOMATION_ROLE]'
           - Sid: PreventKMSAliasTampering
             Effect: Deny
             Action:
@@ -52,6 +56,10 @@ Resources:
               - 'kms:UpdateAlias'
             Resource:
               - !Ref pKMSKeyAliasArn
+            Condition:
+              ArnNotLike:
+                'aws:PrincipalArn':
+                  - 'arn:aws:iam::*:role/[AUTOMATION_ROLE]'
       TargetIds:
         - !Ref pTargetIds
 
@@ -59,4 +67,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.0'
+    Value: '1.0.1'

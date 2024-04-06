@@ -51,6 +51,10 @@ Resources:
               - 's3:PutBucketObjectLockConfiguration'
             Resource:
               - !Sub '${pS3BucketArn}*'
+            Condition:
+              ArnNotLike:
+                'aws:PrincipalArn':
+                  - 'arn:aws:iam::*:role/[AUTOMATION_ROLE]'
           - Sid: PreventS3ObjectTampering
             Effect: Deny
             Action:
@@ -65,4 +69,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.0'
+    Value: '1.0.1'

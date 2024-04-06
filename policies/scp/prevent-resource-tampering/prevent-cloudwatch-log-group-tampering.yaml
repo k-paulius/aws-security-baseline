@@ -41,6 +41,10 @@ Resources:
               - 'logs:DeleteRetentionPolicy'
             Resource:
               - !Ref pCloudWatchLogsLogGroupArn
+            Condition:
+              ArnNotLike:
+                'aws:PrincipalArn':
+                  - 'arn:aws:iam::*:role/[AUTOMATION_ROLE]'
           - Sid: PreventCloudWatchLogGroupTagTampering
             Effect: Deny
             Action:
@@ -59,6 +63,10 @@ Resources:
                     !Select [6, !Split [':', !Ref pCloudWatchLogsLogGroupArn]]
                   ]
                 ]
+            Condition:
+              ArnNotLike:
+                'aws:PrincipalArn':
+                  - 'arn:aws:iam::*:role/[AUTOMATION_ROLE]'
       TargetIds:
         - !Ref pTargetIds
 
@@ -66,4 +74,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.1'
+    Value: '1.0.2'

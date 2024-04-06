@@ -41,6 +41,10 @@ Resources:
               - 'sns:UntagResource'
             Resource:
               - !Ref pSNSTopicArn
+            Condition:
+              ArnNotLike:
+                'aws:PrincipalArn':
+                  - 'arn:aws:iam::*:role/[AUTOMATION_ROLE]'
       TargetIds:
         - !Ref pTargetIds
 
@@ -48,4 +52,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.0'
+    Value: '1.0.1'
