@@ -13,7 +13,7 @@ DATE_ENABLED=$(aws organizations list-aws-service-access-for-organization \
                    --query "EnabledServicePrincipals[?ServicePrincipal == 'cloudtrail.amazonaws.com'].DateEnabled" \
                     --output text)
 
-if [ -n $DATE_ENABLED ]; then
+if [ -n "$DATE_ENABLED" ]; then
     echo "- Trusted Access for AWS CloudTrail was enabled on $DATE_ENABLED."
 else
     echo "- Trusted Access for AWS CloudTrail is not enabled."
