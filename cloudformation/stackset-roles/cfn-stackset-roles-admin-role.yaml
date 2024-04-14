@@ -70,7 +70,7 @@ Resources:
                   - !Sub 'arn:${AWS::Partition}:iam::*:role/${pExecutionRoleName}'
                 Condition:
                   StringEquals:
-                    aws:ResourceOrgID: '${aws:SourceOrgID}'
+                    aws:ResourceOrgID: '${aws:PrincipalOrgID}'
       Tags:
         - Key: 'workload-id'
           Value: !Ref pWorkloadIdTag
