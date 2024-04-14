@@ -1,8 +1,9 @@
 # AWS Security Baseline
 
-- `alerts`
-    - Centralized security alerting solution.
-    - [Readme](alerts/README.md)
+- `alerting`
+    - `org-sec-alerts`
+        - Centralized security alerting solution.
+        - [Readme](alerting/org-sec-alerts/README.md)
 - `billing`
     - `monthly-cost-budget.yaml`
         - Monthly cost budget with alerts. Receive an alert when costs reach your set limit, either actual or forecasted.
@@ -16,8 +17,9 @@
     - `stackset-roles`
         - IAM roles required for deploying CloudFormation StackSets with self-managed permissions
     - [Readme](cloudformation/README.md)
-- `cloudtrail`
-    - AWS CloudTrail organization trail solution.
-    - [Readme](cloudtrail/README.md)
+- `logging`
+    - `org-cloudtrail`
+        - AWS CloudTrail organization trail solution.
+        - [Readme](logging/org-cloudtrail/README.md)
 - `policies`
     - [Readme](policies/README.md)
