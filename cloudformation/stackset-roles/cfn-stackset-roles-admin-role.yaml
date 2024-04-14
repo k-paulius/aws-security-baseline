@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Admin Role for CloudFormation StackSets with Self-Managed Permission Deployments'
+
+Parameters:
+
+  pOrgID:
+    Description: 'AWS Organization ID (e.g., o-abc1234567)'
+    Type: String
+    AllowedPattern: '^o-[a-zA-Z0-9]{10}$'
+    ConstraintDescription: 'Must be a valid AWS Organization ID (e.g., o-abc1234567)'
+
+  pAdminRoleName:
+    Description: 'Name of the Admin Role for CloudFormation StackSets with Self-Managed Permission Deployments'
+    Type: String
+    Default: 'AWSCloudFormationStackSetAdministrationRole'
+
+  pExecutionRoleName:
+    Description: 'Name of the Execution Role for CloudFormation StackSets with Self-Managed Permission Deployments'
+    Type: String
+    Default: 'AWSCloudFormationStackSetExecutionRole'
+
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    Default: 'deployment'
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
+
+Resources:
+
+  rAdminRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref pAdminRoleName
+      Description: 'Admin Role for CloudFormation StackSets with Self-Managed Permission Deployments'
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceOrgID: !Ref pOrgID
+              StringLike:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:cloudformation:*:${AWS::AccountId}:stackset/*'
+      Policies:
+        - PolicyName: assume-execution-roles
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:iam::*:role/${pExecutionRoleName}'
+                Condition:
+                  StringEquals:
+                    aws:ResourceOrgID: '${aws:SourceOrgID}'
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+Outputs:
+
+  oAdminRoleArn:
+    Description: 'CloudFormation StackSet Admin Role ARN'
+    Value: !GetAtt rAdminRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-admin-role-arn'
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

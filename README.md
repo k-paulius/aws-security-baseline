@@ -12,6 +12,10 @@
 - `buckets`
     - `aws-cf-template-bucket.yaml`
         - S3 bucket for CloudFormation template storage
+- `cloudformation`
+    - `stackset-roles`
+        - IAM roles required for deploying CloudFormation StackSets with self-managed permissions
+    - [Readme](cloudformation/README.md)
 - `cloudtrail`
     - AWS CloudTrail organization trail solution.
     - [Readme](cloudtrail/README.md)
