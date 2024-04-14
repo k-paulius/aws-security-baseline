@@ -10,12 +10,11 @@
 - `bin`
     - Shell scripts.
     - [Readme](bin/README.md)
-- `buckets`
-    - `aws-cf-template-bucket.yaml`
-        - S3 bucket for CloudFormation template storage
 - `cloudformation`
     - `stackset-roles`
         - IAM roles required for deploying CloudFormation StackSets with self-managed permissions
+    - `cfn-template-bucket.yaml`
+        - S3 bucket for CloudFormation template storage
     - [Readme](cloudformation/README.md)
 - `logging`
     - `org-cloudtrail`
