@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'AWS Config deployment'
+
+Parameters:
+
+  pConfigBucketName:
+    Description: 'AWS Config history bucket name'
+    Type: String
+    AllowedPattern: ^$|^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: 'S3 Bucket name value must contain only alphanumeric characters and hyphens'
+
+  pDeploymentRegion:
+    Description: 'Name of the deployment region (region where global resources will be recorded)'
+    Type: String
+    AllowedPattern: '^[a-z0-9-]{1,64}$'
+    ConstraintDescription: 'Must be AWS Region (e.g. us-east-1)'
+
+  pConfigKeyArn:
+    Description: 'AWS Config history bucket key ARN'
+    Type: String
+    AllowedPattern: '^$|^arn:(aws[a-zA-Z-]*){1}:kms:[a-z0-9-]+:\d{12}:key\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
+    ConstraintDescription: 'KMS Key ARN example: arn:aws:kms:us-east-1:123456789012:key/ae965708-a783-460a-ae77-fd8f0b8ea511'
+
+  pSecurityToolingAccountId:
+    Description: 'Security Tooling Account ID'
+    Type: String
+    AllowedPattern: '^[0-9]{12}$'
+    ConstraintDescription: 'Must be 12 digits'
+
+Conditions:
+
+  cDeployConfigRole: !Equals [ !Ref 'AWS::Region', !Ref pDeploymentRegion ]
+  cIncludeGlobalResourceTypes: !Equals [ !Ref 'AWS::Region', !Ref pDeploymentRegion ]
+
+Resources:
+
+  rConfigRole:
+    Condition: cDeployConfigRole
+    Type: AWS::IAM::ServiceLinkedRole
+    Properties:
+      AWSServiceName: 'config.amazonaws.com'
+
+  rConfigRecorder:
+    Type: AWS::Config::ConfigurationRecorder
+    Properties:
+      Name: 'default'
+      RecordingGroup:
+        AllSupported: true
+        IncludeGlobalResourceTypes: !If [ cIncludeGlobalResourceTypes, true, false ]
+        RecordingStrategy:
+          UseOnly: 'ALL_SUPPORTED_RESOURCE_TYPES'
+      RecordingMode:
+        RecordingFrequency: 'CONTINUOUS'
+      RoleARN: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig'
+
+  rConfigDeliveryChannel:
+    Type: AWS::Config::DeliveryChannel
+    Properties:
+      Name: 'default'
+      ConfigSnapshotDeliveryProperties:
+        DeliveryFrequency: 'Six_Hours'
+      S3BucketName: !Ref pConfigBucketName
+      S3KmsKeyArn: !Ref pConfigKeyArn
+      SnsTopicARN: !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${pSecurityToolingAccountId}:aws-config-org-stream-${AWS::Region}'
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

@@ -1,0 +1,288 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Organization wide AWS Config deployment'
+
+Parameters:
+
+  pArtifactBucketURL:
+    Description: 'CloudFormation template storage bucket URL (i.e. https://bucket-name.s3.amazonaws.com)'
+    Type: 'String'
+
+  pDeployTargetOrgUnitId:
+    Description: 'The organization root ID or organizational unit (OU) IDs to which stacks deploy.'
+    Type: String
+    AllowedPattern: '^(ou-[a-z0-9]{4,32}-[a-z0-9]{8,32}|r-[a-z0-9]{4,32})$'
+
+  pStackSetAdminRoleName:
+    Description: 'The administration role name for CloudFormation StackSets with self-managed permission deployments'
+    Type: String
+    Default: 'AWSCloudFormationStackSetAdministrationRole'
+
+  pStackExecutionRoleName:
+    Description: 'The execution role name for CloudFormation StackSets with self-managed permission deployments'
+    Type: String
+    Default: 'AWSCloudFormationStackSetExecutionRole'
+
+  pEnabledRegions:
+    Description: 'Comma separated list of enabled AWS regions (e.g. us-east-1,us-west-2)'
+    Type: String
+    AllowedPattern: '^$|^([a-z0-9-]{1,64})$|^(([a-z0-9-]{1,64},)*[a-z0-9-]{1,64})$'
+    ConstraintDescription: 'Only lowercase letters, numbers, and hyphens are allowed (e.g. us-east-1,us-west-2)'
+
+  pOrgID:
+    Description: 'AWS Organization ID (e.g., o-abc1234567)'
+    Type: String
+    AllowedPattern: '^o-[a-zA-Z0-9]{10}$'
+    ConstraintDescription: 'Must be a valid AWS Organization ID (e.g., o-abc1234567)'
+
+  pConfigBucketKeyAlias:
+    Description: 'AWS Config History Bucket KMS Key Alias'
+    Default: 'aws-config-org-bucket-key'
+    Type: String
+
+  pSecurityToolingAccountId:
+    Description: 'Security Tooling Account ID'
+    Type: String
+    AllowedPattern: '^[0-9]{12}$'
+    ConstraintDescription: 'Must be 12 digits'
+
+  pLogArchiveAccountId:
+    Description: 'Log Archive Account ID'
+    Type: String
+    AllowedPattern: '^[0-9]{12}$'
+    ConstraintDescription: 'Must be 12 digits'
+
+  pManagementAccountId:
+    Description: 'Organization Management Account ID'
+    Type: String
+    AllowedPattern: '^[0-9]{12}$'
+    ConstraintDescription: 'Must be 12 digits'
+
+  pBucketNameSuffix:
+    Description: 'Unique 16 character value that will be appended to the bucket name. Accepted values: lower case letters and numbers.'
+    Type: String
+    AllowedPattern: '^[a-z0-9]{16}$'
+    ConstraintDescription: 'Input parameter pBucketNameSuffix must only contain lowercase letters and numbers and be 16 characters long.'
+    MinLength: 16
+
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
+
+Resources:
+
+  # deploy history bucket KMS key in the current account and region
+  rConfigBucketKMSKeyStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub '${pArtifactBucketURL}/aws-config-org-bucket-kms-key.yaml'
+      Parameters:
+        pOrgID: !Ref pOrgID
+        pConfigBucketKeyAlias: !Ref pConfigBucketKeyAlias
+        pWorkloadIdTag: !Ref pWorkloadIdTag
+        pEnvironmentIdTag: !Ref pEnvironmentIdTag
+        pOwnerNameTag: !Ref pOwnerNameTag
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  # deploy history buckets in the current region of log archive account
+  rConfigBucketStackSet:
+    Type: AWS::CloudFormation::StackSet
+    Properties:
+      StackSetName: 'aws-config-org-bucket'
+      Description: 'Deploys AWS Config history bucket'
+      PermissionModel: SELF_MANAGED
+      AdministrationRoleARN: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${pStackSetAdminRoleName}'
+      ExecutionRoleName: !Ref pStackExecutionRoleName
+      ManagedExecution:
+        Active: true
+      OperationPreferences:
+        FailureTolerancePercentage: 0
+        MaxConcurrentPercentage: 100
+        RegionConcurrencyType: 'SEQUENTIAL'
+      StackInstancesGroup:
+        - DeploymentTargets:
+            Accounts:
+              - !Ref pLogArchiveAccountId
+          Regions:
+            - !Ref AWS::Region
+      TemplateURL: !Sub '${pArtifactBucketURL}/aws-config-org-bucket.yaml'
+      Parameters:
+        - ParameterKey: pBucketNameSuffix
+          ParameterValue: !Ref pBucketNameSuffix
+        - ParameterKey: pOrgID
+          ParameterValue: !Ref pOrgID
+        - ParameterKey: pConfigKeyArn
+          ParameterValue: !GetAtt [rConfigBucketKMSKeyStack, Outputs.oConfigBucketKeyArn]
+        - ParameterKey: pWorkloadIdTag
+          ParameterValue: !Ref pWorkloadIdTag
+        - ParameterKey: pEnvironmentIdTag
+          ParameterValue: !Ref pEnvironmentIdTag
+        - ParameterKey: pOwnerNameTag
+          ParameterValue: !Ref pOwnerNameTag
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  # deploy SNS topic in every provided region of security tooling account
+  rConfigSNSTopicStackSet:
+    Type: AWS::CloudFormation::StackSet
+    Properties:
+      StackSetName: 'aws-config-org-sns-topics'
+      Description: 'Deploys AWS Config SNS topics'
+      PermissionModel: SELF_MANAGED
+      AdministrationRoleARN: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${pStackSetAdminRoleName}'
+      ExecutionRoleName: !Ref pStackExecutionRoleName
+      ManagedExecution:
+        Active: true
+      OperationPreferences:
+        FailureTolerancePercentage: 100
+        MaxConcurrentPercentage: 100
+        RegionConcurrencyType: 'PARALLEL'
+      StackInstancesGroup:
+        - DeploymentTargets:
+            Accounts:
+              - !Ref pSecurityToolingAccountId
+          Regions: !Split [ ',', !Ref pEnabledRegions ]
+      TemplateURL: !Sub '${pArtifactBucketURL}/aws-config-org-sns.yaml'
+      Parameters:
+        - ParameterKey: pOrgID
+          ParameterValue: !Ref pOrgID
+        - ParameterKey: pWorkloadIdTag
+          ParameterValue: !Ref pWorkloadIdTag
+        - ParameterKey: pEnvironmentIdTag
+          ParameterValue: !Ref pEnvironmentIdTag
+        - ParameterKey: pOwnerNameTag
+          ParameterValue: !Ref pOwnerNameTag
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  # deploy AWS Config recorder in every provided region of every organization member account
+  rConfigRecorderStackSet:
+    Type: AWS::CloudFormation::StackSet
+    Properties:
+      StackSetName: 'aws-config-org-recorders'
+      Description: 'Deploys AWS Config recorders'
+      PermissionModel: SERVICE_MANAGED
+      CallAs: DELEGATED_ADMIN
+      AutoDeployment:
+        Enabled: true
+        RetainStacksOnAccountRemoval: false
+      ManagedExecution:
+        Active: true
+      OperationPreferences:
+        FailureTolerancePercentage: 100
+        MaxConcurrentPercentage: 100
+        RegionConcurrencyType: 'SEQUENTIAL'
+        RegionOrder: !Split [ ',', !Ref pEnabledRegions ]
+      StackInstancesGroup:
+        - DeploymentTargets:
+            OrganizationalUnitIds:
+              - !Ref pDeployTargetOrgUnitId
+          Regions: !Split [ ',', !Ref pEnabledRegions ]
+      TemplateURL: !Sub '${pArtifactBucketURL}/aws-config-org.yaml'
+      Parameters:
+        - ParameterKey: pConfigBucketName
+          ParameterValue: !Sub 'aws-config-history-${pBucketNameSuffix}'
+        - ParameterKey: pDeploymentRegion
+          ParameterValue: !Ref AWS::Region
+        - ParameterKey: pConfigKeyArn
+          ParameterValue: !GetAtt [rConfigBucketKMSKeyStack, Outputs.oConfigBucketKeyArn]
+        - ParameterKey: pSecurityToolingAccountId
+          ParameterValue: !Ref pSecurityToolingAccountId
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  # deploy AWS Config recorder in every provided region of organization management account
+  rConfigRecorderMgmtAccountStackSet:
+    Type: AWS::CloudFormation::StackSet
+    Properties:
+      StackSetName: 'aws-config-org-mgmt-recorder'
+      Description: 'Deploys AWS Config recorder in the org management account'
+      PermissionModel: SELF_MANAGED
+      AdministrationRoleARN: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${pStackSetAdminRoleName}'
+      ExecutionRoleName: !Ref pStackExecutionRoleName
+      ManagedExecution:
+        Active: true
+      OperationPreferences:
+        FailureTolerancePercentage: 100
+        MaxConcurrentPercentage: 100
+        RegionConcurrencyType: 'SEQUENTIAL'
+        RegionOrder: !Split [ ',', !Ref pEnabledRegions ]
+      StackInstancesGroup:
+        - DeploymentTargets:
+            Accounts:
+              - !Ref pManagementAccountId
+          Regions: !Split [ ',', !Ref pEnabledRegions ]
+      TemplateURL: !Sub '${pArtifactBucketURL}/aws-config-org.yaml'
+      Parameters:
+        - ParameterKey: pConfigBucketName
+          ParameterValue: !Sub 'aws-config-history-${pBucketNameSuffix}'
+        - ParameterKey: pDeploymentRegion
+          ParameterValue: !Ref AWS::Region
+        - ParameterKey: pConfigKeyArn
+          ParameterValue: !GetAtt [rConfigBucketKMSKeyStack, Outputs.oConfigBucketKeyArn]
+        - ParameterKey: pSecurityToolingAccountId
+          ParameterValue: !Ref pSecurityToolingAccountId
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  # deploy organizational aggregator in the current account and region
+  rConfigAggregatorStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub '${pArtifactBucketURL}/aws-config-org-aggregator.yaml'
+      Parameters:
+        pWorkloadIdTag: !Ref pWorkloadIdTag
+        pEnvironmentIdTag: !Ref pEnvironmentIdTag
+        pOwnerNameTag: !Ref pOwnerNameTag
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

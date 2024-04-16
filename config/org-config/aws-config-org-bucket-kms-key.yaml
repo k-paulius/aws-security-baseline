@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'KMS Key for encrypting AWS Config history bucket'
+
+Parameters:
+
+  pOrgID:
+    Description: 'AWS Organization ID (e.g., o-abc1234567)'
+    Type: String
+    AllowedPattern: '^o-[a-zA-Z0-9]{10}$'
+    ConstraintDescription: 'Must be a valid AWS Organization ID (e.g., o-abc1234567)'
+
+  pConfigBucketKeyAlias:
+    Description: 'AWS Config History Bucket KMS Key Alias'
+    Default: 'aws-config-org-bucket-key'
+    Type: String
+
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
+
+Resources:
+
+  rConfigBucketKey:
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Type: AWS::KMS::Key
+    Properties:
+      Description: 'AWS Config history bucket key'
+      Enabled: true
+      EnableKeyRotation: true
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyUsage: ENCRYPT_DECRYPT
+      MultiRegion: false
+      Origin: AWS_KMS
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: 'config-key'
+        Statement:
+
+          - Sid: 'Enable IAM User Permissions'
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+
+          - Sid: AWSConfigKMSPolicy
+            Effect: Allow
+            Principal:
+              Service: 'config.amazonaws.com'
+            Action:
+              - 'kms:Decrypt'
+              - 'kms:GenerateDataKey'
+            Resource: '*'
+            Condition:
+              StringEquals:
+                aws:SourceOrgID: !Ref pOrgID
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  rConfigBucketKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub alias/${pConfigBucketKeyAlias}
+      TargetKeyId: !Ref rConfigBucketKey
+
+Outputs:
+
+  oConfigBucketKeyArn:
+    Description: 'AWS Config History Bucket KMS Key ARN'
+    Value: !GetAtt rConfigBucketKey.Arn
+    Export:
+      Name: !Sub '${pConfigBucketKeyAlias}-arn'
+
+  oConfigBucketKeyAliasName:
+    Description: 'AWS Config History Bucket KMS Key Alias Name'
+    Value: !Ref rConfigBucketKeyAlias
+    Export:
+      Name: !Sub '${pConfigBucketKeyAlias}-alias-name'
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
