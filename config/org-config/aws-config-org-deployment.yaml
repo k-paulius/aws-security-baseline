@@ -187,6 +187,9 @@ Resources:
   # deploy AWS Config recorder in every provided region of every organization member account
   rConfigRecorderStackSet:
     Type: AWS::CloudFormation::StackSet
+    DependsOn:
+      - rConfigBucketStackSet
+      - rConfigSNSTopicStackSet
     Properties:
       StackSetName: 'aws-config-org-recorders'
       Description: 'Deploys AWS Config recorders'
@@ -228,6 +231,9 @@ Resources:
   # deploy AWS Config recorder in every provided region of organization management account
   rConfigRecorderMgmtAccountStackSet:
     Type: AWS::CloudFormation::StackSet
+    DependsOn:
+      - rConfigBucketStackSet
+      - rConfigSNSTopicStackSet
     Properties:
       StackSetName: 'aws-config-org-mgmt-recorder'
       Description: 'Deploys AWS Config recorder in the org management account'
@@ -267,6 +273,7 @@ Resources:
   # deploy organizational aggregator in the current account and region
   rConfigAggregatorStack:
     Type: AWS::CloudFormation::Stack
+    DependsOn: rConfigRecorderStackSet
     Properties:
       TemplateURL: !Sub '${pArtifactBucketURL}/aws-config-org-aggregator.yaml'
       Parameters:
