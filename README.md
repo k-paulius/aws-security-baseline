@@ -16,6 +16,10 @@
     - `cfn-template-bucket.yaml`
         - S3 bucket for CloudFormation template storage
     - [Readme](cloudformation/README.md)
+- `config`
+    - `org-config`
+        - Organizational AWS Config deployment solution.
+        - [Readme](config/org-config/README.md)
 - `logging`
     - `org-cloudtrail`
         - AWS CloudTrail organization trail solution.
