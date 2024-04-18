@@ -315,6 +315,8 @@ Resources:
           ParameterValue: !Ref pBucketNameSuffix
         - ParameterKey: pOrgID
           ParameterValue: !Ref pOrgID
+        - ParameterKey: pSecurityToolingAccountId
+          ParameterValue: !Ref pSecurityToolingAccountId
         - ParameterKey: pWorkloadIdTag
           ParameterValue: !Ref pWorkloadIdTag
         - ParameterKey: pEnvironmentIdTag
