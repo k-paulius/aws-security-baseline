@@ -1,7 +1,11 @@
 - `org-config`
     - Organizational AWS Config deployment solution.
     - [Readme](config/org-config/README.md)
-
+- `org-config-conforms-packs`
+    - `aws-config-org-conforms-packs.yaml`
+        - sample AWS Config organizational conformance pack deployment template; deploys conformance packs in a single AWS region
+    - `aws-config-org-conforms-packs-deployment.yaml`
+        - sample template for deploying AWS Config organizational conformance packs to multiple regions using stacksets
 - `org-config-rules`
     - `aws-config-org-rules.yaml`
         - sample AWS Config organizational rule deployment template; deploys rules in a single AWS region

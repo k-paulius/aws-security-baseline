@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'AWS Config Organizational Conformance Packs'
+
+Parameters:
+
+  pArtifactBucketName:
+    Description: 'Artifact Storage S3 Bucket Name'
+    Type: String
+    AllowedPattern: ^$|^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: 'S3 Bucket name value must contain only alphanumeric characters and hyphens'
+
+  pConfigConformsPackDeliveryBucketName:
+    Description: 'AWS Config Organization Conformance Pack Delivery Bucket Name'
+    Type: String
+    AllowedPattern: ^$|^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: 'S3 Bucket name value must contain only alphanumeric characters and hyphens'
+
+Resources:
+
+  rOrganizationConformancePack:
+    Type: AWS::Config::OrganizationConformancePack
+    Properties:
+      OrganizationConformancePackName: 'cloudtrail-sec-best-practices'
+      TemplateS3Uri: !Sub 's3://${pArtifactBucketName}/aws_config_conformance_packs/Security-Best-Practices-for-CloudTrail.yaml'
+      DeliveryS3Bucket: !Ref pConfigConformsPackDeliveryBucketName
+      #ConformancePackInputParameters:
+      #  - ParameterName: 'testName'
+      #    ParameterValue: 'testValue'
+      #ExcludedAccounts:
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

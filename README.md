@@ -20,6 +20,11 @@
     - `org-config`
         - Organizational AWS Config deployment solution.
         - [Readme](config/org-config/README.md)
+    - `org-config-conforms-packs`
+        - Organizational AWS Config conformance pack deployment solution
+    - `org-config-rules`
+        - Organizational AWS Config rule deployment solution
+    - [Readme](config/README.md)
 - `logging`
     - `org-cloudtrail`
         - AWS CloudTrail organization trail solution.
