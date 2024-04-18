@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Cross-Region AWS Config Organizational Rule deployment'
+
+Parameters:
+
+  pArtifactBucketURL:
+    Description: 'CloudFormation template storage bucket URL (i.e. https://bucket-name.s3.amazonaws.com)'
+    Type: 'String'
+
+  pStackSetAdminRoleName:
+    Description: 'The administration role name for CloudFormation StackSets with self-managed permission deployments'
+    Type: String
+    Default: 'AWSCloudFormationStackSetAdministrationRole'
+
+  pStackExecutionRoleName:
+    Description: 'The execution role name for CloudFormation StackSets with self-managed permission deployments'
+    Type: String
+    Default: 'AWSCloudFormationStackSetExecutionRole'
+
+  pEnabledRegions:
+    Description: 'Comma separated list of enabled AWS regions (e.g. us-east-1,us-west-2)'
+    Type: String
+    AllowedPattern: '^$|^([a-z0-9-]{1,64})$|^(([a-z0-9-]{1,64},)*[a-z0-9-]{1,64})$'
+    ConstraintDescription: 'Only lowercase letters, numbers, and hyphens are allowed (e.g. us-east-1,us-west-2)'
+
+  pCentralMonitoringAccount:
+    Description: 'Comma separated list of AWS Accounts (12-digit) where Amazon GuardDuty results are allowed to be centralized.'
+    Type: String
+    Default: ''
+
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
+
+Resources:
+
+  rOrganizationConfigRulesStackSet:
+    Type: AWS::CloudFormation::StackSet
+    Properties:
+      StackSetName: 'aws-config-org-rules'
+      Description: 'Deploys AWS Config Organizational Rules to Multiple Regions'
+      PermissionModel: SELF_MANAGED
+      AdministrationRoleARN: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${pStackSetAdminRoleName}'
+      ExecutionRoleName: !Ref pStackExecutionRoleName
+      ManagedExecution:
+        Active: true
+      OperationPreferences:
+        FailureTolerancePercentage: 100
+        MaxConcurrentPercentage: 100
+        RegionConcurrencyType: 'PARALLEL'
+      StackInstancesGroup:
+        - DeploymentTargets:
+            Accounts:
+              - !Ref AWS::AccountId
+          Regions: !Split [ ',', !Ref pEnabledRegions ]
+      TemplateURL: !Sub '${pArtifactBucketURL}/aws-config-org-rules.yaml'
+      Parameters:
+        - ParameterKey: pCentralMonitoringAccount
+          ParameterValue: !Ref pCentralMonitoringAccount
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

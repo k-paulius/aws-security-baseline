@@ -1,0 +1,34 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'AWS Config Organizational Rules'
+
+Parameters:
+
+  pCentralMonitoringAccount:
+    Description: 'Comma separated list of AWS Accounts (12-digit) where Amazon GuardDuty results are allowed to be centralized.'
+    Type: String
+    Default: ''
+
+Conditions:
+
+  cHasCentralMonitoringAccount: !Not [ !Equals [ !Ref pCentralMonitoringAccount, '' ] ]
+
+Resources:
+
+  rOrganizationConfigRule:
+    Type: AWS::Config::OrganizationConfigRule
+    Properties:
+      OrganizationConfigRuleName: 'guardduty-enabled-centralized'
+      OrganizationManagedRuleMetadata:
+        RuleIdentifier: 'GUARDDUTY_ENABLED_CENTRALIZED'
+        #Description: ''
+        InputParameters: !If
+          - cHasCentralMonitoringAccount
+          - !Sub '{"CentralMonitoringAccount":"${pCentralMonitoringAccount}"}'
+          - !Ref 'AWS::NoValue'
+        MaximumExecutionFrequency: TwentyFour_Hours
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
