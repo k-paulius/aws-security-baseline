@@ -103,7 +103,7 @@ Resources:
         - Key: 'owner'
           Value: !Ref pOwnerNameTag
 
-  # deploy history buckets in the current region of log archive account
+  # deploy history bucket in the current region of log archive account
   rConfigBucketStackSet:
     Type: AWS::CloudFormation::StackSet
     Properties:
@@ -288,8 +288,49 @@ Resources:
         - Key: 'owner'
           Value: !Ref pOwnerNameTag
 
+  # deploy organization conformance pack delivery bucket in the current region of log archive account
+  rConfigConformsPackBucketStackSet:
+    Type: AWS::CloudFormation::StackSet
+    Properties:
+      StackSetName: 'aws-config-org-conforms-pack-delivery-bucket'
+      Description: 'Deploys AWS Config organization conformance pack delivery bucket'
+      PermissionModel: SELF_MANAGED
+      AdministrationRoleARN: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${pStackSetAdminRoleName}'
+      ExecutionRoleName: !Ref pStackExecutionRoleName
+      ManagedExecution:
+        Active: true
+      OperationPreferences:
+        FailureTolerancePercentage: 0
+        MaxConcurrentPercentage: 100
+        RegionConcurrencyType: 'SEQUENTIAL'
+      StackInstancesGroup:
+        - DeploymentTargets:
+            Accounts:
+              - !Ref pLogArchiveAccountId
+          Regions:
+            - !Ref AWS::Region
+      TemplateURL: !Sub '${pArtifactBucketURL}/aws-config-org-conforms-pack-delivery-bucket.yaml'
+      Parameters:
+        - ParameterKey: pBucketNameSuffix
+          ParameterValue: !Ref pBucketNameSuffix
+        - ParameterKey: pOrgID
+          ParameterValue: !Ref pOrgID
+        - ParameterKey: pWorkloadIdTag
+          ParameterValue: !Ref pWorkloadIdTag
+        - ParameterKey: pEnvironmentIdTag
+          ParameterValue: !Ref pEnvironmentIdTag
+        - ParameterKey: pOwnerNameTag
+          ParameterValue: !Ref pOwnerNameTag
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
 Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.0'
+    Value: '1.0.1'

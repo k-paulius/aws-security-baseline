@@ -1,0 +1,149 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'S3 Bucket for AWS Config Organization Conformance Pack Delivery'
+
+Parameters:
+
+  pBucketNameSuffix:
+    Description: 'Unique 16 character value that will be appended to the bucket name. Accepted values: lower case letters and numbers.'
+    Type: String
+    AllowedPattern: '^[a-z0-9]{16}$'
+    ConstraintDescription: 'Input parameter pBucketNameSuffix must only contain lowercase letters and numbers and be 16 characters long.'
+    MinLength: 16
+
+  pOrgID:
+    Description: 'AWS Organization ID (e.g., o-abc1234567)'
+    Type: String
+    AllowedPattern: '^o-[a-zA-Z0-9]{10}$'
+    ConstraintDescription: 'Must be a valid AWS Organization ID (e.g., o-abc1234567)'
+
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
+
+Resources:
+
+  rConfigConformsPackBucket:
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'awsconfigconforms-pack-delivery-${pBucketNameSuffix}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  rConfigConformsPackBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref rConfigConformsPackBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+
+          - Sid: AWSConfigConformsBucketPermissionsCheck
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetBucketAcl'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${rConfigConformsPackBucket}'
+            Condition:
+              StringEquals:
+                aws:PrincipalOrgID: !Ref pOrgID
+              StringLike:
+                aws:PrincipalArn: !Sub 'arn:${AWS::Partition}:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms'
+
+          - Sid: AWSConfigConformsBucketDelivery
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:PutObject'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${rConfigConformsPackBucket}/*'
+            Condition:
+              StringEquals:
+                aws:PrincipalOrgID: !Ref pOrgID
+                s3:x-amz-acl: bucket-owner-full-control
+              StringLike:
+                aws:PrincipalArn: !Sub 'arn:${AWS::Partition}:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms'
+
+          - Sid: AWSConfigConformsBucketReadAccess
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${rConfigConformsPackBucket}/*'
+            Condition:
+              StringEquals:
+                aws:PrincipalOrgID: !Ref pOrgID
+              StringLike:
+                aws:PrincipalArn: !Sub 'arn:${AWS::Partition}:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms'
+
+          - Sid: RestrictToTLSRequestsOnly
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3:::${rConfigConformsPackBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${rConfigConformsPackBucket}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+          - Sid: DenyExternalPrincipals
+            Effect: Deny
+            Action: 's3:*'
+            Principal: '*'
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3:::${rConfigConformsPackBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${rConfigConformsPackBucket}/*'
+            Condition:
+              StringNotEquals:
+                aws:PrincipalOrgID: !Ref pOrgID
+              Bool:
+                aws:PrincipalIsAWSService: false
+
+Outputs:
+
+  oConfigConformsPackBucketName:
+    Description: 'AWS Config Organization Conformance Pack Delivery Bucket Name'
+    Value: !Ref rConfigConformsPackBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-bucket-name'
+
+  oConfigConformsPackBucketArn:
+    Description: 'AWS Config Organization Conformance Pack Delivery ARN'
+    Value: !GetAtt rConfigConformsPackBucket.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-bucket-arn'
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

@@ -34,6 +34,7 @@ Deploy `aws-config-org-deployment.yaml` CloudFormation template in the security 
 - `aws-config-org-sns.yaml` in every provided region of the security tooling account
 - `aws-config-org.yaml` in every provided region of every organization member account via stackset and organization management account via stackset
 - `aws-config-org-aggregator.yaml` in the current account and region via nested stack
+- `aws-config-org-conforms-pack-delivery-bucket.yaml` in the log archive account, current region via stackset
 
 #### Step 3a: Create IAM Roles Required for Deploying CloudFormation StackSets with Self-Managed Permissions
 
@@ -92,7 +93,8 @@ aws cloudformation deploy \
 - `aws-config-org-aggregator.yaml` deploys:
     - `AWSConfigAggregatorRole`                                - IAM Role
     - `aws-config-org-aggregator`                              - AWS Config Aggregator
-
+- `aws-config-org-conforms-pack-delivery-bucket.yaml` deploys:
+    - `awsconfigconforms-pack-delivery-${pBucketNameSuffix}`   - S3 bucket
 - `aws-config-org-deployment.yaml` deploys:
     - `rConfigBucketKMSKeyStack`                               - Stack for `aws-config-org-bucket-kms-key.yaml`
     - `aws-config-org-bucket`                                  - StackSet for `aws-config-org-bucket.yaml`
