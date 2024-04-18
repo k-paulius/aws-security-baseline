@@ -3,9 +3,11 @@ Description: 'Organization wide AWS Config deployment'
 
 Parameters:
 
-  pArtifactBucketURL:
-    Description: 'CloudFormation template storage bucket URL (i.e. https://bucket-name.s3.amazonaws.com)'
-    Type: 'String'
+  pArtifactBucketName:
+    Description: 'Artifact storage S3 bucket name'
+    Type: String
+    AllowedPattern: ^$|^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: 'S3 Bucket name value must contain only alphanumeric characters and hyphens'
 
   pDeployTargetOrgUnitId:
     Description: 'The organization root ID or organizational unit (OU) IDs to which stacks deploy.'
@@ -88,7 +90,7 @@ Resources:
   rConfigBucketKMSKeyStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub '${pArtifactBucketURL}/aws-config-org-bucket-kms-key.yaml'
+      TemplateURL: !Sub 'https://${pArtifactBucketName}.s3.amazonaws.com/aws-config-org-bucket-kms-key.yaml'
       Parameters:
         pOrgID: !Ref pOrgID
         pConfigBucketKeyAlias: !Ref pConfigBucketKeyAlias
@@ -124,7 +126,7 @@ Resources:
               - !Ref pLogArchiveAccountId
           Regions:
             - !Ref AWS::Region
-      TemplateURL: !Sub '${pArtifactBucketURL}/aws-config-org-bucket.yaml'
+      TemplateURL: !Sub 'https://${pArtifactBucketName}.s3.amazonaws.com/aws-config-org-bucket.yaml'
       Parameters:
         - ParameterKey: pBucketNameSuffix
           ParameterValue: !Ref pBucketNameSuffix
@@ -166,7 +168,7 @@ Resources:
             Accounts:
               - !Ref pSecurityToolingAccountId
           Regions: !Split [ ',', !Ref pEnabledRegions ]
-      TemplateURL: !Sub '${pArtifactBucketURL}/aws-config-org-sns.yaml'
+      TemplateURL: !Sub 'https://${pArtifactBucketName}.s3.amazonaws.com/aws-config-org-sns.yaml'
       Parameters:
         - ParameterKey: pOrgID
           ParameterValue: !Ref pOrgID
@@ -210,7 +212,7 @@ Resources:
             OrganizationalUnitIds:
               - !Ref pDeployTargetOrgUnitId
           Regions: !Split [ ',', !Ref pEnabledRegions ]
-      TemplateURL: !Sub '${pArtifactBucketURL}/aws-config-org.yaml'
+      TemplateURL: !Sub 'https://${pArtifactBucketName}.s3.amazonaws.com/aws-config-org.yaml'
       Parameters:
         - ParameterKey: pConfigBucketName
           ParameterValue: !Sub 'aws-config-history-${pBucketNameSuffix}'
@@ -252,7 +254,7 @@ Resources:
             Accounts:
               - !Ref pManagementAccountId
           Regions: !Split [ ',', !Ref pEnabledRegions ]
-      TemplateURL: !Sub '${pArtifactBucketURL}/aws-config-org.yaml'
+      TemplateURL: !Sub 'https://${pArtifactBucketName}.s3.amazonaws.com/aws-config-org.yaml'
       Parameters:
         - ParameterKey: pConfigBucketName
           ParameterValue: !Sub 'aws-config-history-${pBucketNameSuffix}'
@@ -275,7 +277,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     DependsOn: rConfigRecorderStackSet
     Properties:
-      TemplateURL: !Sub '${pArtifactBucketURL}/aws-config-org-aggregator.yaml'
+      TemplateURL: !Sub 'https://${pArtifactBucketName}.s3.amazonaws.com/aws-config-org-aggregator.yaml'
       Parameters:
         pWorkloadIdTag: !Ref pWorkloadIdTag
         pEnvironmentIdTag: !Ref pEnvironmentIdTag
@@ -309,7 +311,7 @@ Resources:
               - !Ref pLogArchiveAccountId
           Regions:
             - !Ref AWS::Region
-      TemplateURL: !Sub '${pArtifactBucketURL}/aws-config-org-conforms-pack-delivery-bucket.yaml'
+      TemplateURL: !Sub 'https://${pArtifactBucketName}.s3.amazonaws.com/aws-config-org-conforms-pack-delivery-bucket.yaml'
       Parameters:
         - ParameterKey: pBucketNameSuffix
           ParameterValue: !Ref pBucketNameSuffix
@@ -335,4 +337,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.1'
+    Value: '1.0.2'

@@ -61,7 +61,7 @@ aws cloudformation deploy \
     --stack-name aws-config-org-deployment \
     --capabilities "CAPABILITY_NAMED_IAM" \
     --parameter-overrides \
-        pArtifactBucketURL="https://BUCKETNAME.s3.amazonaws.com" \
+        pArtifactBucketName="BUCKETNAME" \
         pDeployTargetOrgUnitId=r-abcd \
         pStackSetAdminRoleName="AWSCloudFormationStackSetAdministrationRole" \
         pStackExecutionRoleName="AWSCloudFormationStackSetExecutionRole" \
