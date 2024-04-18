@@ -58,7 +58,7 @@ Resources:
     Properties:
       Name: 'default'
       ConfigSnapshotDeliveryProperties:
-        DeliveryFrequency: 'Six_Hours'
+        DeliveryFrequency: 'TwentyFour_Hours'
       S3BucketName: !Ref pConfigBucketName
       S3KmsKeyArn: !Ref pConfigKeyArn
       SnsTopicARN: !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${pSecurityToolingAccountId}:aws-config-org-stream-${AWS::Region}'
@@ -67,4 +67,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.0'
+    Value: '1.0.1'
