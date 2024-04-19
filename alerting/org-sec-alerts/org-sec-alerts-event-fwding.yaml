@@ -7,6 +7,12 @@ Parameters:
     Description: 'Organization wide security alert event bus ARN'
     Type: String
 
+  pHomeRegion:
+    Description: 'Name of the home region (region where global resources will be deployed)'
+    Type: String
+    AllowedPattern: '^[a-z0-9-]{1,64}$'
+    ConstraintDescription: 'Must be AWS Region (e.g. us-east-1)'
+
   pWorkloadIdTag:
     Description: 'Workload Id (value used in the "workload-id" tag)'
     Type: String
@@ -26,7 +32,46 @@ Parameters:
     AllowedPattern: '[a-zA-Z0-9\-_]+'
     ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
 
+Conditions:
+
+  cDeployGlobalResources: !Equals [ !Ref 'AWS::Region', !Ref pHomeRegion ]
+
 Resources:
+
+  rOrgSecAlertsEventFwdRuleRole:
+    Condition: cDeployGlobalResources
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: 'org-sec-alerts-event-fwd-rule-role'
+      Description: 'Execution role for "org-sec-alerts" event forwarding rules'
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              ArnLike:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-*'
+      Policies:
+        - PolicyName: put-events
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'events:PutEvents'
+                Resource:
+                  - !Ref pOrgSecEventBus
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
 
   rOrgSecAlertsRootSigninFwdRule:
     Type: AWS::Events::Rule
@@ -59,7 +104,7 @@ Resources:
       Targets:
         - Id: 'rOrgSecEventBus'
           Arn: !Ref pOrgSecEventBus
-          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+          RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
 
   rOrgSecAlertsRootIAMFwdRule:
     Type: AWS::Events::Rule
@@ -97,7 +142,7 @@ Resources:
       Targets:
         - Id: 'rOrgSecEventBus'
           Arn: !Ref pOrgSecEventBus
-          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+          RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
 
   rOrgSecAlertsRootSTSFwdRule:
     Type: AWS::Events::Rule
@@ -121,7 +166,7 @@ Resources:
       Targets:
         - Id: 'rOrgSecEventBus'
           Arn: !Ref pOrgSecEventBus
-          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+          RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
 
   rOrgSecAlertsAccountFwdRule:
     Type: AWS::Events::Rule
@@ -141,7 +186,7 @@ Resources:
       Targets:
         - Id: 'rOrgSecEventBus'
           Arn: !Ref pOrgSecEventBus
-          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+          RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
 
   rOrgSecAlertsKMSFwdRule:
     Type: AWS::Events::Rule
@@ -171,7 +216,7 @@ Resources:
       Targets:
         - Id: 'rOrgSecEventBus'
           Arn: !Ref pOrgSecEventBus
-          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+          RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
 
   rOrgSecAlertsCloudTrailFwdRule:
     Type: AWS::Events::Rule
@@ -198,7 +243,7 @@ Resources:
       Targets:
         - Id: 'rOrgSecEventBus'
           Arn: !Ref pOrgSecEventBus
-          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+          RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
 
   rOrgSecAlertsS3FwdRule:
     Type: AWS::Events::Rule
@@ -243,7 +288,7 @@ Resources:
       Targets:
         - Id: 'rOrgSecEventBus'
           Arn: !Ref pOrgSecEventBus
-          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+          RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
 
   rOrgSecAlertsCloudWatchFwdRule:
     Type: AWS::Events::Rule
@@ -272,7 +317,7 @@ Resources:
       Targets:
         - Id: 'rOrgSecEventBus'
           Arn: !Ref pOrgSecEventBus
-          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+          RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
 
   rOrgSecAlertsSNSFwdRule:
     Type: AWS::Events::Rule
@@ -299,7 +344,7 @@ Resources:
       Targets:
         - Id: 'rOrgSecEventBus'
           Arn: !Ref pOrgSecEventBus
-          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+          RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
 
   rOrgSecAlertsOrganizationsFwdRule:
     Type: AWS::Events::Rule
@@ -316,7 +361,7 @@ Resources:
       Targets:
         - Id: 'rOrgSecEventBus'
           Arn: !Ref pOrgSecEventBus
-          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
+          RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
 
   rOrgSecAlertsConfigFwdRule:
     Type: AWS::Events::Rule
@@ -354,44 +399,10 @@ Resources:
       Targets:
         - Id: 'rOrgSecEventBus'
           Arn: !Ref pOrgSecEventBus
-          RoleArn: !GetAtt rOrgSecAlertsEventFwdRuleRole.Arn
-
-  rOrgSecAlertsEventFwdRuleRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: 'org-sec-alerts-event-fwd-rule-role'
-      Description: 'Execution role for "org-sec-alerts" event forwarding rules'
-      Path: /
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: events.amazonaws.com
-            Action: sts:AssumeRole
-            Condition:
-              ArnLike:
-                aws:SourceArn: !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/org-sec-alerts-*'
-      Policies:
-        - PolicyName: put-events
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - 'events:PutEvents'
-                Resource:
-                  - !Ref pOrgSecEventBus
-      Tags:
-        - Key: 'workload-id'
-          Value: !Ref pWorkloadIdTag
-        - Key: 'environment-id'
-          Value: !Ref pEnvironmentIdTag
-        - Key: 'owner'
-          Value: !Ref pOwnerNameTag
+          RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
 
 Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.8'
+    Value: '1.0.9'
