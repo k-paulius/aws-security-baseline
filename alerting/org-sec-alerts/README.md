@@ -206,6 +206,8 @@ aws cloudformation deploy \
   - `org-sec-alerts-s3-fwd-rule`                  - EventBridge event forwarding rule
   - `org-sec-alerts-cloudwatch-fwd-rule`          - EventBridge event forwarding rule
   - `org-sec-alerts-sns-fwd-rule`                 - EventBridge event forwarding rule
+  - `org-sec-alerts-organizations-fwd-rule`       - EventBridge event forwarding rule
+  - `org-sec-alerts-config-fwd-rule`              - EventBridge event forwarding rule
   - `org-sec-alerts-event-fwd-rule-role`          - EventBridge Rule IAM execution role
 
 - `org-sec-alerts-event-fwding-stackset.yaml` deploys:
@@ -217,7 +219,7 @@ aws cloudformation deploy \
   - `org-sec-alerts-root-sts-rule`                - EventBridge alert rule
   - `org-sec-alerts-account-rule`                 - EventBridge alert rule
 
-- `org-sec-alerts-cloudtrail-alerts.yaml` deploys"
+- `org-sec-alerts-cloudtrail-alerts.yaml` deploys:
   - `org-sec-alerts-cloudtrail-trail-rule`        - EventBridge alert rule
   - `org-sec-alerts-cloudtrail-kms-rule`          - EventBridge alert rule
   - `org-sec-alerts-cloudtrail-s3-rule`           - EventBridge alert rule
