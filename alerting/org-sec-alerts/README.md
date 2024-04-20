@@ -92,7 +92,9 @@ Currently monitored and alerted activities:
 - Optional alert rule stacks:
   - `alert-rules/org-sec-alerts-general-alerts.yaml` - This stack sets up EventBridge rules for generating general alerts.
     - This stack depends on `org-sec-alerts-central-bus.yaml` stack.
-  - `alert-rules/org-sec-alerts-cloudtrail-alerts.yaml` - This stack sets up EventBridge rules to trigger alerts upon detecting changes in CloudTrail or associated resource configurations.
+  - `alert-rules/org-sec-alerts-cloudtrail-alerts.yaml` - This stack sets up EventBridge rules to trigger alerts upon detecting changes to CloudTrail or associated resource configurations.
+    - This stack depends on `org-sec-alerts-central-bus.yaml` stack.
+  - `alert-rules/org-sec-alerts-config-alerts.yaml` - This stack sets up EventBridge rules to trigger alerts upon detecting changes to AWS Config or associated resource configurations.
     - This stack depends on `org-sec-alerts-central-bus.yaml` stack.
 
 ### Step 1: Deploy `org-sec-alerts-deployment.yaml`
@@ -166,6 +168,25 @@ aws cloudformation deploy \
         pTopicArn="arn:aws:sns:us-east-1:222222222222:org-cloudtrail-file-delivery"
 ```
 
+### (Optional) Step 4: Deploy `org-sec-alerts-config-alerts.yaml`
+---
+- If you want to receive email alerts you must deploy central bus stack with parameter `pDeployEmailAlerts=yes` and set `pSendEmailAlerts` value to `yes`.
+- If you want to receive Slack alerts you must deploy central bus stack with parameter `pDeploySlackAlerts=yes` and set `pSendSlackAlerts` value to `yes`.
+
+```bash
+aws cloudformation deploy \
+    --template-file org-sec-alerts-config-alerts.yaml \
+    --stack-name org-sec-alerts-config-alerts \
+    --parameter-overrides \
+        pCentralBusStackName="org-sec-alerts-central-bus" \
+        pSendEmailAlerts=yes \
+        pSendSlackAlerts=yes \
+        pKMSKeyArn="arn:aws:kms:us-east-1:222222222222:key/ae965708-a783-460a-ae77-fd8f0b8ea511" \
+        pKMSAliasArn="arn:aws:kms:us-east-1:222222222222:alias/aws-config-org-bucket-key" \
+        pS3BucketArns="arn:aws:s3:::aws-config-history-a1b2c3d4e5fg6h7i,arn:aws:s3:::aws-config-history-a1b2c3d4e5fg6h7i-access-logs,arn:aws:s3:::awsconfigconforms-pack-delivery-a1b2c3d4e5fg6h7i" \
+        pTopicArn="arn:aws:sns:*:222222222222:aws-config-org-stream-"
+```
+
 ## Deployed Resources
 
 - `org-sec-alerts-central-bus.yaml` deploys:
@@ -207,3 +228,9 @@ aws cloudformation deploy \
   - `org-sec-alerts-cloudtrail-s3-rule`           - EventBridge alert rule
   - `org-sec-alerts-cloudtrail-cloudwatch-rule`   - EventBridge alert rule
   - `org-sec-alerts-cloudtrail-sns-rule`          - EventBridge alert rule
+
+- `org-sec-alerts-config-alerts.yaml` deploys:
+  - `org-sec-alerts-config-rule`                  - EventBridge alert rule
+  - `org-sec-alerts-config-kms-rule`              - EventBridge alert rule
+  - `org-sec-alerts-config-s3-rule`               - EventBridge alert rule
+  - `org-sec-alerts-config-sns-rule`              - EventBridge alert rule

@@ -1,0 +1,433 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'AWS Config and Related Resource Configuration Change Alerts'
+
+Parameters:
+
+  pKMSKeyArn:
+    Description: 'KMS key ARN to monitor'
+    Type: String
+    Default: ''
+
+  pKMSAliasArn:
+    Description: 'KMS alias ARN to monitor'
+    Type: String
+    Default: ''
+
+  pS3BucketArns:
+    Description: 'Comma separated list of the S3 Bucket ARNs to monitor'
+    Type: CommaDelimitedList
+    Default: ''
+
+  pTopicArn:
+    Description: 'SNS Topic ARN(s) to monitor. Note: wildcard character (*) can be used to match multiple ARNs. Do not append wildcard character at the beginning or the end of the string as it is appended automatically. (e.g.: arn:aws:sns:*:111111111111:aws-config-org-stream-)'
+    Type: String
+    Default: ''
+    AllowedPattern: '.{0}|^[^*].*[^*]$'
+    ConstraintDescription: 'Must not begin or end with wildcard (*) character. Wildcards are appended automatically.'
+
+  pCentralBusStackName:
+    Description: 'Central Bus Stack Name'
+    Type: String
+
+  pSendEmailAlerts:
+    Description: 'Send e-mail alerts?'
+    Type: String
+    Default: 'no'
+    AllowedValues:
+         - 'yes'
+         - 'no'
+
+  pSendSlackAlerts:
+    Description: 'Send Slack alerts?'
+    Type: String
+    Default: 'no'
+    AllowedValues:
+         - 'yes'
+         - 'no'
+
+Conditions:
+
+  cDeployEmailAlerts: !Equals [!Ref pSendEmailAlerts, 'yes']
+  cDeploySlackAlerts: !Equals [!Ref pSendSlackAlerts, 'yes']
+  cDeployAlerts: !Or [ !Condition cDeployEmailAlerts, !Condition cDeploySlackAlerts ]
+  cHaveKMSKeyArn: !Not [!Equals [!Ref pKMSKeyArn, '']]
+  cHaveKMSAliasArn: !Not [!Equals [!Ref pKMSAliasArn, '']]
+  cDeployKMSAlerts: !And
+    - !Or
+      - !Condition cHaveKMSKeyArn
+      - !Condition cHaveKMSAliasArn
+    - !Condition cDeployAlerts
+  cDeployS3Alerts: !And
+    - !Not [!Equals [!Join ['', !Ref pS3BucketArns], '']]
+    - !Condition cDeployAlerts
+  cDeploySNSAlerts: !And
+    - !Not [!Equals [!Ref pTopicArn, '']]
+    - !Condition cDeployAlerts
+
+Resources:
+
+  rOrgSecAlertsConfigRule:
+    Type: AWS::Events::Rule
+    Condition: cDeployAlerts
+    Properties:
+      Name: 'org-sec-alerts-config-rule'
+      Description: 'AWS Config configuration change alerts'
+      EventBusName: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-event-bus-arn'}
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.config'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          eventName:
+            - 'DeleteConfigRule'
+            - 'PutConfigurationRecorder'
+            - 'DeleteConfigurationRecorder'
+            - 'StartConfigurationRecorder'
+            - 'StopConfigurationRecorder'
+            - 'PutDeliveryChannel'
+            - 'DeleteDeliveryChannel'
+            - 'PutRetentionConfiguration'
+            - 'DeleteRetentionConfiguration'
+            - 'PutConfigurationAggregator'
+            - 'DeleteConfigurationAggregator'
+            - 'DeleteAggregationAuthorization'
+            - 'DeleteEvaluationResults'
+            - 'DeleteOrganizationConfigRule'
+            - 'DeleteConformancePack'
+            - 'DeleteOrganizationConformancePack'
+            - 'DeleteResourceConfig'
+            - 'TagResource'
+            - 'UntagResource'
+      Targets:
+        - !If
+          - cDeployEmailAlerts
+          - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-email-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+            InputTransformer:
+              InputPathsMap:
+                accountId: $.detail.userIdentity.accountId
+                arn: $.detail.userIdentity.arn
+                awsRegion: $.detail.awsRegion
+                eventID: $.detail.eventID
+                eventName: $.detail.eventName
+                eventTime: $.detail.eventTime
+                principalId: $.detail.userIdentity.principalId
+                sourceIPAddress: $.detail.sourceIPAddress
+                userAgent: $.detail.userAgent
+                userIdentityType: $.detail.userIdentity.type
+                accessKeyId: $.detail.userIdentity.accessKeyId
+                eventSource: $.detail.eventSource
+                resource1: $.detail.requestParameters.configurationRecorder.name
+                resource2: $.detail.requestParameters.configurationRecorderName
+                resource3: $.detail.requestParameters.deliveryChannel.name
+                resource4: $.detail.requestParameters.deliveryChannelName
+                resource5: $.detail.requestParameters.configRuleName
+                resource6: $.detail.requestParameters.configurationAggregatorName
+                resource7: $.detail.requestParameters.organizationConfigRuleName
+                resource8: $.detail.requestParameters.conformancePackName
+                resource9: $.detail.requestParameters.organizationConformancePackName
+                resource10: $.detail.requestParameters.resourceArn
+                errorCode: $.detail.errorCode
+                errorMessage: $.detail.errorMessage
+              InputTemplate: |
+                "----- ALERT | USER: <userIdentityType> | EVENT: config:<eventName> -----"
+
+                "Account Id.........: <accountId>"
+                "ARN................: <arn>"
+                "Principal Id.......: <principalId>"
+                "Access Key Id......: <accessKeyId>"
+                "Event Time.........: <eventTime>"
+                "Region.............: <awsRegion>"
+                "IP Address.........: <sourceIPAddress>"
+                "User Agent.........: <userAgent>"
+                "Event Source.......: <eventSource>"
+                "CloudTrail Event ID: <eventID>"
+                "Resources Id.......: <resource1><resource2><resource3><resource4><resource5><resource6><resource7><resource8><resource9><resource10>"
+                "Error Code.........: <errorCode>"
+                "Error Message......: <errorMessage>"
+          - !Ref 'AWS::NoValue'
+        - !If
+          - cDeploySlackAlerts
+          - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-slack-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+          - !Ref 'AWS::NoValue'
+
+  rOrgSecAlertsKMSRule:
+    Type: AWS::Events::Rule
+    Condition: cDeployKMSAlerts
+    Properties:
+      Name: 'org-sec-alerts-config-kms-rule'
+      Description: 'AWS Config KMS config change alerts'
+      EventBusName: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-event-bus-arn'}
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.kms'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          eventName:
+            - 'ScheduleKeyDeletion'
+            - 'DisableKey'
+            - 'EnableKey'
+            - 'DisableKeyRotation'
+            - 'EnableKeyRotation'
+            - 'PutKeyPolicy'
+            - 'UpdateKeyDescription'
+            - 'TagResource'
+            - 'UntagResource'
+            - 'DeleteAlias'
+            - 'UpdateAlias'
+          $or:
+            - errorMessage:
+                - !If
+                  - cHaveKMSKeyArn
+                  - wildcard: !Sub '*${pKMSKeyArn}*'
+                  - !Ref 'AWS::NoValue'
+                - !If
+                  - cHaveKMSAliasArn
+                  - wildcard: !Sub '*${pKMSAliasArn}*'
+                  - !Ref 'AWS::NoValue'
+            - resources:
+                ARN:
+                  - !If [ cHaveKMSKeyArn, !Ref pKMSKeyArn, !Ref 'AWS::NoValue' ]
+                  - !If [ cHaveKMSAliasArn, !Ref pKMSAliasArn, !Ref 'AWS::NoValue' ]
+      Targets:
+        - !If
+          - cDeployEmailAlerts
+          - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-email-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+            InputTransformer:
+              InputPathsMap:
+                accountId: $.detail.userIdentity.accountId
+                arn: $.detail.userIdentity.arn
+                awsRegion: $.detail.awsRegion
+                eventID: $.detail.eventID
+                eventName: $.detail.eventName
+                eventTime: $.detail.eventTime
+                principalId: $.detail.userIdentity.principalId
+                sourceIPAddress: $.detail.sourceIPAddress
+                userAgent: $.detail.userAgent
+                userIdentityType: $.detail.userIdentity.type
+                accessKeyId: $.detail.userIdentity.accessKeyId
+                eventSource: $.detail.eventSource
+                resource1: $.detail.resources[0].ARN
+                resource2: $.detail.resources[1].ARN
+                errorCode: $.detail.errorCode
+                errorMessage: $.detail.errorMessage
+              InputTemplate: |
+                "----- ALERT | USER: <userIdentityType> | EVENT: kms:<eventName> -----"
+
+                "Account Id.........: <accountId>"
+                "ARN................: <arn>"
+                "Principal Id.......: <principalId>"
+                "Access Key Id......: <accessKeyId>"
+                "Event Time.........: <eventTime>"
+                "Region.............: <awsRegion>"
+                "IP Address.........: <sourceIPAddress>"
+                "User Agent.........: <userAgent>"
+                "Event Source.......: <eventSource>"
+                "CloudTrail Event ID: <eventID>"
+                "Resources Id.......: <resource1>"
+                "...................: <resource2>"
+                "Error Code.........: <errorCode>"
+                "Error Message......: <errorMessage>"
+          - !Ref 'AWS::NoValue'
+        - !If
+          - cDeploySlackAlerts
+          - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-slack-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+          - !Ref 'AWS::NoValue'
+
+  rOrgSecAlertsS3Rule:
+    Type: AWS::Events::Rule
+    Condition: cDeployS3Alerts
+    Properties:
+      Name: 'org-sec-alerts-config-s3-rule'
+      Description: 'AWS Config S3 bucket config change alerts'
+      EventBusName: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-event-bus-arn'}
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.s3'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          eventName:
+            - 'DeleteBucket'
+            - 'PutBucketEncryption'
+            - 'DeleteBucketEncryption'
+            - 'PutBucketLifecycle'
+            - 'PutBucketIntelligentTieringConfiguration'
+            - 'DeleteBucketIntelligentTieringConfiguration'
+            - 'DeleteBucketLifecycle'
+            - 'PutBucketOwnershipControls'
+            - 'DeleteBucketOwnershipControls'
+            - 'PutBucketPolicy'
+            - 'DeleteBucketPolicy'
+            - 'PutBucketReplication'
+            - 'DeleteBucketReplication'
+            - 'PutBucketTagging'
+            - 'DeleteBucketTagging'
+            - 'PutBucketWebsite'
+            - 'DeleteBucketWebsite'
+            - 'PutBucketCors'
+            - 'DeleteBucketCors'
+            - 'PutBucketPublicAccessBlock'
+            - 'DeleteBucketPublicAccessBlock'
+            - 'PutBucketAcl'
+            - 'PutBucketLogging'
+            - 'PutBucketNotification'
+            - 'PutBucketVersioning'
+            - 'PutBucketObjectLockConfiguration'
+          resources:
+            ARN: !Ref pS3BucketArns
+      Targets:
+        - !If
+          - cDeployEmailAlerts
+          - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-email-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+            InputTransformer:
+              InputPathsMap:
+                accountId: $.detail.userIdentity.accountId
+                arn: $.detail.userIdentity.arn
+                awsRegion: $.detail.awsRegion
+                eventID: $.detail.eventID
+                eventName: $.detail.eventName
+                eventTime: $.detail.eventTime
+                principalId: $.detail.userIdentity.principalId
+                sourceIPAddress: $.detail.sourceIPAddress
+                userAgent: $.detail.userAgent
+                userIdentityType: $.detail.userIdentity.type
+                accessKeyId: $.detail.userIdentity.accessKeyId
+                eventSource: $.detail.eventSource
+                resource1: $.detail.resources[0].ARN
+                errorCode: $.detail.errorCode
+                errorMessage: $.detail.errorMessage
+              InputTemplate: |
+                "----- ALERT | USER: <userIdentityType> | EVENT: s3:<eventName> -----"
+
+                "Account Id.........: <accountId>"
+                "ARN................: <arn>"
+                "Principal Id.......: <principalId>"
+                "Access Key Id......: <accessKeyId>"
+                "Event Time.........: <eventTime>"
+                "Region.............: <awsRegion>"
+                "IP Address.........: <sourceIPAddress>"
+                "User Agent.........: <userAgent>"
+                "Event Source.......: <eventSource>"
+                "CloudTrail Event ID: <eventID>"
+                "Resources Id.......: <resource1>"
+                "Error Code.........: <errorCode>"
+                "Error Message......: <errorMessage>"
+          - !Ref 'AWS::NoValue'
+        - !If
+          - cDeploySlackAlerts
+          - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-slack-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+          - !Ref 'AWS::NoValue'
+
+  rOrgSecAlertsSNSRule:
+    Type: AWS::Events::Rule
+    Condition: cDeploySNSAlerts
+    Properties:
+      Name: 'org-sec-alerts-config-sns-rule'
+      Description: 'AWS Config SNS config change alerts'
+      EventBusName: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-event-bus-arn'}
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.sns'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          eventName:
+            - 'DeleteTopic'
+            - 'AddPermission'
+            - 'RemovePermission'
+            - 'SetTopicAttributes'
+            - 'Subscribe'
+            - 'Unsubscribe'
+            - 'TagResource'
+            - 'UntagResource'
+          $or:
+            - errorMessage:
+              - wildcard: !Sub '*${pTopicArn}*'
+            - requestParameters:
+                $or:
+                  - resourceArn:
+                    - wildcard: !Sub '*${pTopicArn}*'
+                  - topicArn:
+                    - wildcard: !Sub '*${pTopicArn}*'
+                  - subscriptionArn:
+                    - wildcard: !Sub '*${pTopicArn}*'
+      Targets:
+        - !If
+          - cDeployEmailAlerts
+          - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-email-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+            InputTransformer:
+              InputPathsMap:
+                accountId: $.detail.userIdentity.accountId
+                arn: $.detail.userIdentity.arn
+                awsRegion: $.detail.awsRegion
+                eventID: $.detail.eventID
+                eventName: $.detail.eventName
+                eventTime: $.detail.eventTime
+                principalId: $.detail.userIdentity.principalId
+                sourceIPAddress: $.detail.sourceIPAddress
+                userAgent: $.detail.userAgent
+                userIdentityType: $.detail.userIdentity.type
+                accessKeyId: $.detail.userIdentity.accessKeyId
+                eventSource: $.detail.eventSource
+                resource1: $.detail.requestParameters.resourceArn
+                resource2: $.detail.requestParameters.topicArn
+                resource3: $.detail.requestParameters.subscriptionArn
+                errorCode: $.detail.errorCode
+                errorMessage: $.detail.errorMessage
+              InputTemplate: |
+                "----- ALERT | USER: <userIdentityType> | EVENT: sns:<eventName> -----"
+
+                "Account Id.........: <accountId>"
+                "ARN................: <arn>"
+                "Principal Id.......: <principalId>"
+                "Access Key Id......: <accessKeyId>"
+                "Event Time.........: <eventTime>"
+                "Region.............: <awsRegion>"
+                "IP Address.........: <sourceIPAddress>"
+                "User Agent.........: <userAgent>"
+                "Event Source.......: <eventSource>"
+                "CloudTrail Event ID: <eventID>"
+                "Resources Id.......: <resource1><resource2><resource3>"
+                "Error Code.........: <errorCode>"
+                "Error Message......: <errorMessage>"
+          - !Ref 'AWS::NoValue'
+        - !If
+          - cDeploySlackAlerts
+          - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-slack-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+          - !Ref 'AWS::NoValue'
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
