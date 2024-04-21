@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'SCP: Prevent AWS Config Tampering'
+
+Parameters:
+
+  pPolicyName:
+    Description: 'Policy Name'
+    Type: String
+    Default: 'PreventAWSConfigTampering'
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rPolicy:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: !Ref pPolicyName
+      Description: 'Prevent AWS Config Tampering'
+      Content:
+        Version: '2012-10-17'
+        Statement:
+
+          - Sid: PreventAWSConfigTampering
+            Effect: Deny
+            Action:
+              - 'config:PutConfigurationRecorder'
+              - 'config:DeleteConfigurationRecorder'
+              - 'config:StopConfigurationRecorder'
+              - 'config:PutDeliveryChannel'
+              - 'config:DeleteDeliveryChannel'
+              - 'config:PutRetentionConfiguration'
+              - 'config:DeleteRetentionConfiguration'
+              - 'config:PutConfigurationAggregator'
+              - 'config:DeleteConfigurationAggregator'
+              - 'config:DeleteAggregationAuthorization'
+              - 'config:TagResource'
+              - 'config:UntagResource'
+            Resource:
+              - '*'
+            Condition:
+              ArnNotLike:
+                'aws:PrincipalArn':
+                  - 'arn:aws:iam::*:role/[AUTOMATION_ROLE]'
+
+          - Sid: PreventAWSConfigRuleTampering
+            Effect: Deny
+            Action:
+              - 'config:DeleteConfigRule'
+              - 'config:DeleteConformancePack'
+              - 'config:DeleteOrganizationConfigRule'
+              - 'config:DeleteOrganizationConformancePack'
+              - 'config:DeleteResourceConfig'
+              - 'config:DeleteEvaluationResults'
+            Resource:
+              - '*'
+            Condition:
+              ArnNotLike:
+                'aws:PrincipalArn':
+                  - 'arn:aws:iam::*:role/[AUTOMATION_ROLE]'
+      TargetIds:
+        - !Ref pTargetIds
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
