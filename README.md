@@ -25,6 +25,10 @@
     - `org-config-rules`
         - Organizational AWS Config rule deployment solution
     - [Readme](config/README.md)
+- `iam`
+    - `access-analyzer`
+        - Organizational AWS IAM Access Analyzer Deployment
+        - [Readme](iam/access-analyzer/README.md)
 - `logging`
     - `org-cloudtrail`
         - AWS CloudTrail organization trail solution.

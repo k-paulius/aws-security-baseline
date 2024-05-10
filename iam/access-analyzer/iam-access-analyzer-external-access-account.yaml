@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'External access AWS IAM Access Analyzer (account trust)'
+
+Parameters:
+
+  pManagementAccountId:
+    Description: 'Organization Management Account ID'
+    Type: String
+    AllowedPattern: '^[0-9]{12}$'
+    ConstraintDescription: 'Must be 12 digits'
+
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
+
+Resources:
+
+  rAccessAnalyzer:
+    Type: AWS::AccessAnalyzer::Analyzer
+    Properties:
+      AnalyzerName: !Sub 'external-access-analyzer-account-${AWS::AccountId}-${AWS::Region}'
+      Type: 'ACCOUNT'
+      ArchiveRules:
+        - RuleName: 'ArchiveRule-OrganizationAccountAccessRole'
+          Filter:
+            - Property: 'isPublic'
+              Eq:
+                - 'false'
+            - Property: 'resourceType'
+              Eq:
+                - 'AWS::IAM::Role'
+            - Property: 'resource'
+              Contains:
+                - 'OrganizationAccountAccessRole'
+            - Property: 'principal.AWS'
+              Eq:
+                - !Ref pManagementAccountId
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
