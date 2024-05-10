@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'SCP: Prevent AWS IAM Access Analyzer Tampering'
+
+Parameters:
+
+  pPolicyName:
+    Description: 'Policy Name'
+    Type: String
+    Default: 'PreventAccessAnalyzerTampering'
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rPolicy:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: !Ref pPolicyName
+      Description: 'Prevent AWS IAM Access Analyzer Tampering'
+      Content:
+        Version: '2012-10-17'
+        Statement:
+
+          - Sid: PreventAccessAnalyzerTampering
+            Effect: Deny
+            Action:
+              - 'access-analyzer:CreateAnalyzer'
+              - 'access-analyzer:DeleteAnalyzer'
+              - 'access-analyzer:CreateArchiveRule'
+              - 'access-analyzer:UpdateArchiveRule'
+              - 'access-analyzer:ApplyArchiveRule'
+              - 'access-analyzer:TagResource'
+              - 'access-analyzer:UntagResource'
+            Resource:
+              - '*'
+            Condition:
+              ArnNotLike:
+                'aws:PrincipalArn':
+                  - 'arn:aws:iam::*:role/[AUTOMATION_ROLE]'
+      TargetIds:
+        - !Ref pTargetIds
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
