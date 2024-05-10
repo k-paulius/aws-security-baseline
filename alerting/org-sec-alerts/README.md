@@ -96,6 +96,8 @@ Currently monitored and alerted activities:
     - This stack depends on `org-sec-alerts-central-bus.yaml` stack.
   - `alert-rules/org-sec-alerts-config-alerts.yaml` - This stack sets up EventBridge rules to trigger alerts upon detecting changes to AWS Config or associated resource configurations.
     - This stack depends on `org-sec-alerts-central-bus.yaml` stack.
+  - `alert-rules/org-sec-alerts-access-analyzer-alerts.yaml` - This stack sets up EventBridge rules to trigger alerts upon detecting changes to AWS IAM Access Analyzer configuration.
+    - This stack depends on `org-sec-alerts-central-bus.yaml` stack.
 
 ### Step 1: Deploy `org-sec-alerts-deployment.yaml`
 ---
@@ -187,6 +189,21 @@ aws cloudformation deploy \
         pTopicArn="arn:aws:sns:*:222222222222:aws-config-org-stream-"
 ```
 
+### (Optional) Step 5: Deploy `org-sec-alerts-access-analyzer-alerts.yaml`
+---
+- If you want to receive email alerts you must deploy central bus stack with parameter `pDeployEmailAlerts=yes` and set `pSendEmailAlerts` value to `yes`.
+- If you want to receive Slack alerts you must deploy central bus stack with parameter `pDeploySlackAlerts=yes` and set `pSendSlackAlerts` value to `yes`.
+
+```bash
+aws cloudformation deploy \
+    --template-file org-sec-alerts-access-analyzer-alerts.yaml \
+    --stack-name org-sec-alerts-access-analyzer-alerts \
+    --parameter-overrides \
+        pCentralBusStackName="org-sec-alerts-central-bus" \
+        pSendEmailAlerts=yes \
+        pSendSlackAlerts=yes
+```
+
 ## Deployed Resources
 
 - `org-sec-alerts-central-bus.yaml` deploys:
@@ -234,3 +251,6 @@ aws cloudformation deploy \
   - `org-sec-alerts-config-kms-rule`              - EventBridge alert rule
   - `org-sec-alerts-config-s3-rule`               - EventBridge alert rule
   - `org-sec-alerts-config-sns-rule`              - EventBridge alert rule
+
+- `org-sec-alerts-access-analyzer-alerts.yaml` deploys:
+  - `org-sec-alerts-access-analyzer-rule`         - EventBridge alert rule

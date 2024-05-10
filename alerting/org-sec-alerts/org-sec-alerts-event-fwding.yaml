@@ -401,8 +401,36 @@ Resources:
           Arn: !Ref pOrgSecEventBus
           RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
 
+  rOrgSecAlertsAccessAnalyzerFwdRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: 'org-sec-alerts-access-analyzer-fwd-rule'
+      Description: 'Forwards events from the "access-analyzer" event source to the central event bus'
+      EventBusName: default
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.access-analyzer'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          eventName:
+            - 'CreateAnalyzer'
+            - 'DeleteAnalyzer'
+            - 'CreateArchiveRule'
+            - 'UpdateArchiveRule'
+            - 'ApplyArchiveRule'
+            - 'UpdateFindings'
+            - 'StartPolicyGeneration'
+            - 'TagResource'
+            - 'UntagResource'
+      Targets:
+        - Id: 'rOrgSecEventBus'
+          Arn: !Ref pOrgSecEventBus
+          RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
+
 Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.10'
+    Value: '1.0.11'
