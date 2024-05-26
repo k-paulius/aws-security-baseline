@@ -1,5 +1,9 @@
 # Scripts
 
+- `enable_delegated_admin_for_access_analyzer.sh`
+    - Register a delegated administrator account for AWS IAM Access Analyzer.
+    - Usage: `./enable_delegated_admin_for_access_analyzer.sh 123456789012`
+
 - `enable_delegated_admin_for_account_management.sh`
     - Register a delegated administrator account for AWS Account Management.
     - Usage: `./enable_delegated_admin_for_account_management.sh 123456789012`
@@ -11,6 +15,10 @@
 - `enable_delegated_admin_for_config.sh`
     - Register a delegated administrator account for AWS Config and/or AWS Config Multi-Account Setup.
     - Usage: `./enable_delegated_admin_for_config.sh 123456789012`
+
+- `enable_trusted_access_for_access_analyzer.sh`
+    - Enables AWS IAM Access Analyzer as a Trusted Service in Organizations.
+    - Usage: `./enable_trusted_access_for_access_analyzer.sh`
 
 - `enable_trusted_access_for_account_management.sh`
     - Enables AWS Account Management as a Trusted Service in Organizations.
