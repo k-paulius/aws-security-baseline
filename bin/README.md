@@ -36,3 +36,9 @@
 - `enable_trusted_access_for_config.sh`
     - Enables AWS Config and/or AWS Config Multi-Account Setup as a Trusted Service in Organizations.
     - Usage: `./enable_trusted_access_for_config.sh`
+
+# Secure Defaults Scripts
+
+- `ec2_default_ebs_encryption.py`
+    - Enables default EBS encryption across organization accounts and regions.
+    - See help for usage information: `./ec2_default_ebs_encryption.py --help`
