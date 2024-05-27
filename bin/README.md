@@ -42,3 +42,7 @@
 - `ec2_default_ebs_encryption.py`
     - Enables default EBS encryption across organization accounts and regions.
     - See help for usage information: `./ec2_default_ebs_encryption.py --help`
+
+- `s3_block_account_public_access.py`
+    - Enable account-wide S3 Public Access Block across organization accounts.
+    - See help for usage information: `./s3_block_account_public_access.py --help`
