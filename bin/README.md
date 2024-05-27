@@ -51,6 +51,10 @@
     - Enables default EBS encryption across organization accounts and regions.
     - See help for usage information: `./ec2_default_ebs_encryption.py --help`
 
+- `ec2_imds_defaults.py`
+    - Modify the default IMDS settings at the account level across organization accounts and regions.
+    - See help for usage information: `./ec2_imds_defaults.py --help`
+
 - `s3_block_account_public_access.py`
     - Enable account-wide S3 Public Access Block across organization accounts.
     - See help for usage information: `./s3_block_account_public_access.py --help`
