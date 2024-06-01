@@ -35,3 +35,7 @@
         - [Readme](logging/org-cloudtrail/README.md)
 - `policies`
     - [Readme](policies/README.md)
+- `security-hub`
+    - `org-security-hub`
+        - Organizational AWS Security Hub Deployment
+        - [Readme](security-hub/org-security-hub/README.md)
