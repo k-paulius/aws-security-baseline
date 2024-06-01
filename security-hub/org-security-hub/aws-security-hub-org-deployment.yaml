@@ -1,0 +1,193 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Organization wide AWS Security Hub deployment'
+
+Parameters:
+
+  pArtifactBucketName:
+    Description: 'Artifact storage S3 bucket name'
+    Type: String
+    AllowedPattern: ^$|^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: 'S3 Bucket name value must contain only alphanumeric characters and hyphens'
+
+  pStackSetAdminRoleName:
+    Description: 'The administration role name for CloudFormation StackSets with self-managed permission deployments'
+    Type: String
+    Default: 'AWSCloudFormationStackSetAdministrationRole'
+
+  pStackExecutionRoleName:
+    Description: 'The execution role name for CloudFormation StackSets with self-managed permission deployments'
+    Type: String
+    Default: 'AWSCloudFormationStackSetExecutionRole'
+
+  pManagementAccountId:
+    Description: 'Organization Management Account ID'
+    Type: String
+    AllowedPattern: '^[0-9]{12}$'
+    ConstraintDescription: 'Must be 12 digits'
+
+  pDelegatedAdminAccountId:
+    Description: 'Account ID of the account to designate as the Security Hub administrator account'
+    Type: String
+    AllowedPattern: '^[0-9]{12}$'
+    ConstraintDescription: 'Must be 12 digits'
+
+  pEnabledRegions:
+    Description: 'Comma-separated list of regions aggregating findings to the home region, excluding the home region (e.g., us-east-1,us-west-2)'
+    Type: String
+    AllowedPattern: '^$|^([a-z0-9-]{1,64})$|^(([a-z0-9-]{1,64},)*[a-z0-9-]{1,64})$'
+    ConstraintDescription: 'Only lowercase letters, numbers, and hyphens are allowed (e.g., us-east-1,us-west-2)'
+
+  pRootId:
+    Description: 'The organization root.'
+    Type: String
+    AllowedPattern: '^r-[a-z0-9]{4,32}$'
+
+  pApplyBaselineConfigPolicy:
+    Description: 'Apply baseline configuration policy to all accounts by associating it with the organization root?'
+    Type: String
+    Default: 'no'
+    AllowedValues:
+         - 'yes'
+         - 'no'
+
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
+
+Resources:
+
+  # deploy Security Hub in the current region of the organization's management account
+  rSecurityHubMgmtAccountStackSet:
+    Type: AWS::CloudFormation::StackSet
+    DependsOn: rSecurityHubOrgAdminAccountHubStack
+    Properties:
+      StackSetName: 'aws-security-hub-org-mgmt-account'
+      Description: 'Enables Security Hub in the Management Account'
+      PermissionModel: SELF_MANAGED
+      AdministrationRoleARN: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${pStackSetAdminRoleName}'
+      ExecutionRoleName: !Ref pStackExecutionRoleName
+      ManagedExecution:
+        Active: true
+      OperationPreferences:
+        FailureTolerancePercentage: 0
+        MaxConcurrentPercentage: 100
+        RegionConcurrencyType: 'SEQUENTIAL'
+      StackInstancesGroup:
+        - DeploymentTargets:
+            Accounts:
+              - !Ref pManagementAccountId
+          Regions:
+            - !Ref AWS::Region
+      TemplateURL: !Sub 'https://${pArtifactBucketName}.s3.amazonaws.com/aws-security-hub-org-mgmt-account.yaml'
+      Parameters:
+        - ParameterKey: pDelegatedAdminAccountId
+          ParameterValue: !Ref pDelegatedAdminAccountId
+        - ParameterKey: pWorkloadIdTag
+          ParameterValue: !Ref pWorkloadIdTag
+        - ParameterKey: pEnvironmentIdTag
+          ParameterValue: !Ref pEnvironmentIdTag
+        - ParameterKey: pOwnerNameTag
+          ParameterValue: !Ref pOwnerNameTag
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  # deploy Security Hub in the current account and region
+  rSecurityHubOrgAdminAccountHubStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${pArtifactBucketName}.s3.amazonaws.com/aws-security-hub-org-admin-account-hub.yaml'
+      Parameters:
+        pWorkloadIdTag: !Ref pWorkloadIdTag
+        pEnvironmentIdTag: !Ref pEnvironmentIdTag
+        pOwnerNameTag: !Ref pOwnerNameTag
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  # deploy Security Hub in the current account and region
+  rSecurityHubOrgAdminAccountConfigStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: rSecurityHubMgmtAccountStackSet
+    Properties:
+      TemplateURL: !Sub 'https://${pArtifactBucketName}.s3.amazonaws.com/aws-security-hub-org-admin-account-config.yaml'
+      Parameters:
+        pEnabledRegions: !Ref pEnabledRegions
+        pRootId: !Ref pRootId
+        pApplyBaselineConfigPolicy: !Ref pApplyBaselineConfigPolicy
+        pWorkloadIdTag: !Ref pWorkloadIdTag
+        pEnvironmentIdTag: !Ref pEnvironmentIdTag
+        pOwnerNameTag: !Ref pOwnerNameTag
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  # deploy Security Hub automation rules in the current account and all enabled regions
+  rSecurityHubAutomationRulesStackSet:
+    Type: AWS::CloudFormation::StackSet
+    Properties:
+      StackSetName: 'aws-security-hub-org-automation-rules'
+      Description: 'Deploys Security Hub Automation Rules'
+      PermissionModel: SELF_MANAGED
+      AdministrationRoleARN: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${pStackSetAdminRoleName}'
+      ExecutionRoleName: !Ref pStackExecutionRoleName
+      ManagedExecution:
+        Active: true
+      OperationPreferences:
+        FailureTolerancePercentage: 100
+        MaxConcurrentPercentage: 100
+        RegionConcurrencyType: 'PARALLEL'
+      StackInstancesGroup:
+        - DeploymentTargets:
+            Accounts:
+              - !Ref pDelegatedAdminAccountId
+          Regions: !Split [ ',', !Join [ ',', [ !Ref pEnabledRegions, !Ref AWS::Region ] ] ]
+      TemplateURL: !Sub 'https://${pArtifactBucketName}.s3.amazonaws.com/aws-security-hub-org-automation-rules.yaml'
+      Parameters:
+        - ParameterKey: pHomeRegion
+          ParameterValue: !Ref AWS::Region
+        - ParameterKey: pWorkloadIdTag
+          ParameterValue: !Ref pWorkloadIdTag
+        - ParameterKey: pEnvironmentIdTag
+          ParameterValue: !Ref pEnvironmentIdTag
+        - ParameterKey: pOwnerNameTag
+          ParameterValue: !Ref pOwnerNameTag
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

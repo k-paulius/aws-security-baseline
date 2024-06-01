@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Security Hub Config in the Delegated Admin Account'
+
+Parameters:
+
+  pEnabledRegions:
+    Description: 'Comma-separated list of regions aggregating findings to the home region, excluding the home region (e.g., us-east-1,us-west-2).'
+    Type: String
+    AllowedPattern: '^$|^([a-z0-9-]{1,64})$|^(([a-z0-9-]{1,64},)*[a-z0-9-]{1,64})$'
+    ConstraintDescription: 'Only lowercase letters, numbers, and hyphens are allowed (e.g., us-east-1,us-west-2)'
+
+  pRootId:
+    Description: 'The organization root (e.g., r-abcd)'
+    Type: String
+    AllowedPattern: '^r-[a-z0-9]{4,32}$'
+
+  pApplyBaselineConfigPolicy:
+    Description: 'Apply baseline configuration policy to all accounts by associating it with the organization root?'
+    Type: String
+    Default: 'no'
+    AllowedValues:
+         - 'yes'
+         - 'no'
+
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
+
+Conditions:
+
+  cApplyBaselineConfigPolicy: !Equals [ !Ref pApplyBaselineConfigPolicy, 'yes']
+
+Resources:
+
+  rFindingAggregator:
+    Type: AWS::SecurityHub::FindingAggregator
+    Properties:
+      RegionLinkingMode: 'SPECIFIED_REGIONS'
+      Regions: !Split [ ',', !Ref pEnabledRegions ]
+
+  rOrganizationConfiguration:
+    Type: AWS::SecurityHub::OrganizationConfiguration
+    DependsOn: rFindingAggregator
+    Properties:
+      ConfigurationType: 'CENTRAL'
+      AutoEnable: false           # always 'false' when using central configuration
+      AutoEnableStandards: 'NONE' # always 'NONE' when using central configuration
+
+  rConfigurationPolicyBaseline:
+    Type: AWS::SecurityHub::ConfigurationPolicy
+    DependsOn: rOrganizationConfiguration
+    Properties:
+      Name: 'baseline-config'
+      Description: 'Enforces baseline security controls by enabling AFSBP standard'
+      ConfigurationPolicy:
+        SecurityHub:
+          ServiceEnabled: true
+          EnabledStandardIdentifiers:
+            - 'arn:aws:securityhub:us-east-1::standards/aws-foundational-security-best-practices/v/1.0.0'
+          SecurityControlsConfiguration:
+            DisabledSecurityControlIdentifiers:
+              - 'Macie.1'
+              - 'IAM.6'
+      Tags:
+        # NOTE: AWS::SecurityHub::ConfigurationPolicy resource does not permit '-' in the tag names
+        # workload-id: !Ref pWorkloadIdTag
+        # environment-id: !Ref pEnvironmentIdTag
+        owner: !Ref pOwnerNameTag
+
+  rConfigurationPolicyDisabled:
+    Type: AWS::SecurityHub::ConfigurationPolicy
+    DependsOn: rOrganizationConfiguration
+    Properties:
+      Name: 'disable-security-hub'
+      Description: 'Disables Security Hub monitoring'
+      ConfigurationPolicy:
+        SecurityHub:
+          ServiceEnabled: false
+      Tags:
+        # NOTE: AWS::SecurityHub::ConfigurationPolicy resource does not permit '-' in the tag names
+        # workload-id: !Ref pWorkloadIdTag
+        # environment-id: !Ref pEnvironmentIdTag
+        owner: !Ref pOwnerNameTag
+
+  rPolicyAssociation:
+    Type: AWS::SecurityHub::PolicyAssociation
+    DependsOn: rConfigurationPolicyBaseline
+    Condition: cApplyBaselineConfigPolicy
+    Properties:
+      TargetType: 'ROOT'
+      TargetId: !Ref pRootId
+      ConfigurationPolicyId: !GetAtt rConfigurationPolicyBaseline.Id
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

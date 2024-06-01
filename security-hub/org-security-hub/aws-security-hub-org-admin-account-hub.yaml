@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Security Hub in the Delegated Admin Account'
+
+Parameters:
+
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
+
+Resources:
+
+  rSecurityHub:
+    Type: AWS::SecurityHub::Hub
+    Properties:
+      AutoEnableControls: true
+      ControlFindingGenerator: 'SECURITY_CONTROL'
+      EnableDefaultStandards: false
+      Tags:
+        workload-id: !Ref pWorkloadIdTag
+        environment-id: !Ref pEnvironmentIdTag
+        owner: !Ref pOwnerNameTag
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Security Hub Automation Rules'
+
+Parameters:
+
+  pHomeRegion:
+    Description: 'Name of the home region (Security Hub aggregation Region)'
+    Type: String
+    AllowedPattern: '^[a-z0-9-]{1,64}$'
+    ConstraintDescription: 'Must be AWS Region (e.g. us-east-1)'
+
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
+
+Conditions:
+
+  cNotHomeRegion: !Not [ !Equals [ !Ref 'AWS::Region', !Ref pHomeRegion ] ]
+
+Resources:
+
+  rAutomationRuleSuppressConfig1:
+    Condition: cNotHomeRegion
+    Type: AWS::SecurityHub::AutomationRule
+    Properties:
+      RuleName: 'Suppress Config.1'
+      Description: !Sub 'Suppress Config.1 findings in all regions except ${AWS::Region}.'
+      RuleOrder: 1
+      IsTerminal: false
+      RuleStatus: 'ENABLED'
+      Actions:
+        - Type: 'FINDING_FIELDS_UPDATE'
+          FindingFieldsUpdate:
+            Workflow:
+              Status: 'SUPPRESSED'
+            Note:
+              Text: !Sub 'Automatically suppress Config.1 in the regions where not all resources are being recorded.'
+              UpdatedBy: 'sechub-automation'
+      Criteria:
+        ProductName:
+          - Value: 'Security Hub'
+            Comparison: 'EQUALS'
+        ComplianceSecurityControlId:
+          - Value: 'Config.1'
+            Comparison: 'EQUALS'
+        WorkflowStatus:
+          - Value: 'NEW'
+            Comparison: 'EQUALS'
+        RecordState:
+          - Value: 'ACTIVE'
+            Comparison: 'EQUALS'
+      Tags:
+        # NOTE: AWS::SecurityHub::AutomationRule resource does not permit '-' in the tag names
+        # workload-id: !Ref pWorkloadIdTag
+        # environment-id: !Ref pEnvironmentIdTag
+        owner: !Ref pOwnerNameTag
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
