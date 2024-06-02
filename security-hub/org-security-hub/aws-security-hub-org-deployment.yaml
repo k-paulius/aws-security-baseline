@@ -142,6 +142,7 @@ Resources:
   # deploy Security Hub automation rules in the current account and all enabled regions
   rSecurityHubAutomationRulesStackSet:
     Type: AWS::CloudFormation::StackSet
+    DependsOn: rSecurityHubOrgAdminAccountConfigStack
     Properties:
       StackSetName: 'aws-security-hub-org-automation-rules'
       Description: 'Deploys Security Hub Automation Rules'
@@ -181,4 +182,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.1'
+    Value: '1.0.2'
