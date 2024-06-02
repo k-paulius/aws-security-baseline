@@ -3,6 +3,7 @@
 ## Description
 
 This solution deploys AWS Security Hub using central configuration feature of the Security Hub in all existing and future AWS Organization member accounts.
+A Security Hub configuration policy attached to the organization root enables Security Hub solely for aggregating findings, without activating any security standards or controls, and does not require AWS Config to be enabled.
 
 ## Notes
 
@@ -37,8 +38,6 @@ Parameters:
     - Comma-separated list of regions aggregating findings to the home region, excluding the home region (e.g., us-east-1,us-west-2)
 - `pRootId`
     - The organization root (e.g., r-abcd)
-- `pApplyBaselineConfigPolicy`
-    - Apply baseline configuration policy to all accounts by associating it with the organization root?
 - `pWorkloadIdTag`
     - Workload Id (value used in the "workload-id" tag)
 - `pEnvironmentIdTag`
@@ -72,7 +71,6 @@ aws cloudformation deploy \
         pDelegatedAdminAccountId=222222222222 \
         pEnabledRegions="us-west-2" \
         pRootId=r-abcd \
-        pApplyBaselineConfigPolicy=yes \
         pWorkloadIdTag=aws-security-hub-org \
         pEnvironmentIdTag=prod \
         pOwnerNameTag=secops
@@ -88,6 +86,7 @@ aws cloudformation deploy \
 - `aws-security-hub-org-admin-account-config.yaml`
     - `rFindingAggregator`                                     - Security Hub findings aggregator
     - `rOrganizationConfiguration`                             - Security Hub central configuration
+    - `rConfigurationPolicyAggregation`                        - Security Hub configuration policy
     - `rConfigurationPolicyBaseline`                           - Security Hub configuration policy
     - `rConfigurationPolicyDisabled`                           - Security Hub configuration policy
     - `rPolicyAssociation`                                     - Security Hub configuration policy association

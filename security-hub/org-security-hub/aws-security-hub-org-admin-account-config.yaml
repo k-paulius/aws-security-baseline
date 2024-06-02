@@ -14,14 +14,6 @@ Parameters:
     Type: String
     AllowedPattern: '^r-[a-z0-9]{4,32}$'
 
-  pApplyBaselineConfigPolicy:
-    Description: 'Apply baseline configuration policy to all accounts by associating it with the organization root?'
-    Type: String
-    Default: 'no'
-    AllowedValues:
-         - 'yes'
-         - 'no'
-
   pWorkloadIdTag:
     Description: 'Workload Id (value used in the "workload-id" tag)'
     Type: String
@@ -39,10 +31,6 @@ Parameters:
     Type: String
     AllowedPattern: '[a-zA-Z0-9\-_]+'
     ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
-
-Conditions:
-
-  cApplyBaselineConfigPolicy: !Equals [ !Ref pApplyBaselineConfigPolicy, 'yes']
 
 Resources:
 
@@ -118,15 +106,14 @@ Resources:
 
   rPolicyAssociation:
     Type: AWS::SecurityHub::PolicyAssociation
-    DependsOn: rConfigurationPolicyBaseline
-    Condition: cApplyBaselineConfigPolicy
+    DependsOn: rConfigurationPolicyAggregation
     Properties:
       TargetType: 'ROOT'
       TargetId: !Ref pRootId
-      ConfigurationPolicyId: !GetAtt rConfigurationPolicyBaseline.Id
+      ConfigurationPolicyId: !GetAtt rConfigurationPolicyAggregation.Id
 
 Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.0'
+    Value: '1.0.1'
