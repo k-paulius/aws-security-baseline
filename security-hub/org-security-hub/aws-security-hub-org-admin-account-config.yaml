@@ -60,12 +60,32 @@ Resources:
       AutoEnable: false           # always 'false' when using central configuration
       AutoEnableStandards: 'NONE' # always 'NONE' when using central configuration
 
+  rConfigurationPolicyAggregation:
+    Type: AWS::SecurityHub::ConfigurationPolicy
+    DependsOn: rOrganizationConfiguration
+    Properties:
+      Name: 'aggregation-only-config'
+      Description: 'Security Hub is enabled only for aggregating findings, without any security standards or controls enabled.'
+      ConfigurationPolicy:
+        SecurityHub:
+          ServiceEnabled: true
+          EnabledStandardIdentifiers:
+            - !Ref 'AWS::NoValue'
+          SecurityControlsConfiguration:
+            DisabledSecurityControlIdentifiers:
+              - !Ref 'AWS::NoValue'
+      Tags:
+        # NOTE: AWS::SecurityHub::ConfigurationPolicy resource does not permit '-' in the tag names
+        # workload-id: !Ref pWorkloadIdTag
+        # environment-id: !Ref pEnvironmentIdTag
+        owner: !Ref pOwnerNameTag
+
   rConfigurationPolicyBaseline:
     Type: AWS::SecurityHub::ConfigurationPolicy
     DependsOn: rOrganizationConfiguration
     Properties:
       Name: 'baseline-config'
-      Description: 'Enforces baseline security controls by enabling AFSBP standard'
+      Description: 'Enforces baseline security controls by enabling AFSBP standard.'
       ConfigurationPolicy:
         SecurityHub:
           ServiceEnabled: true
@@ -85,8 +105,8 @@ Resources:
     Type: AWS::SecurityHub::ConfigurationPolicy
     DependsOn: rOrganizationConfiguration
     Properties:
-      Name: 'disable-security-hub'
-      Description: 'Disables Security Hub monitoring'
+      Name: 'security-hub-disabled-config'
+      Description: 'Disables Security Hub monitoring.'
       ConfigurationPolicy:
         SecurityHub:
           ServiceEnabled: false
