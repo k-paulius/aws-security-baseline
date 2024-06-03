@@ -429,8 +429,56 @@ Resources:
           Arn: !Ref pOrgSecEventBus
           RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
 
+  rOrgSecAlertsSecurityHubFwdRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: 'org-sec-alerts-security-hub-fwd-rule'
+      Description: 'Forwards events from the "securityhub" event source to the central event bus'
+      EventBusName: default
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.securityhub'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          eventName:
+            - 'CreateMembers'
+            - 'InviteMembers'
+            - 'AcceptAdministratorInvitation'
+            - 'AcceptInvitation'
+            - 'DeclineInvitations'
+            - 'DeleteInvitations'
+            - 'DisassociateMembers'
+            - 'DeleteMembers'
+            - 'DisassociateFromAdministratorAccount'
+            - 'DisassociateFromMasterAccount'
+            - 'DisableSecurityHub'
+            - 'DisableImportFindingsForProduct'
+            - 'DeleteFindingAggregator'
+            - 'UpdateFindingAggregator'
+            - 'BatchDisableStandards'
+            - 'BatchUpdateStandardsControlAssociations'
+            - 'UpdateStandardsControl'
+            - 'UpdateSecurityControl'
+            - 'CreateAutomationRule'
+            - 'BatchDeleteAutomationRules'
+            - 'BatchUpdateAutomationRules'
+            - 'DeleteConfigurationPolicy'
+            - 'UpdateConfigurationPolicy'
+            - 'StartConfigurationPolicyAssociation'
+            - 'StartConfigurationPolicyDisassociation'
+            - 'EnableOrganizationAdminAccount'
+            - 'DisableOrganizationAdminAccount'
+            - 'TagResource'
+            - 'UntagResource'
+      Targets:
+        - Id: 'rOrgSecEventBus'
+          Arn: !Ref pOrgSecEventBus
+          RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
+
 Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.11'
+    Value: '1.0.12'

@@ -1,0 +1,145 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'AWS Security Hub Configuration Change Alerts'
+
+Parameters:
+
+  pCentralBusStackName:
+    Description: 'Central Bus Stack Name'
+    Type: String
+
+  pSendEmailAlerts:
+    Description: 'Send e-mail alerts?'
+    Type: String
+    Default: 'no'
+    AllowedValues:
+         - 'yes'
+         - 'no'
+
+  pSendSlackAlerts:
+    Description: 'Send Slack alerts?'
+    Type: String
+    Default: 'no'
+    AllowedValues:
+         - 'yes'
+         - 'no'
+
+Conditions:
+
+  cDeployEmailAlerts: !Equals [!Ref pSendEmailAlerts, 'yes']
+  cDeploySlackAlerts: !Equals [!Ref pSendSlackAlerts, 'yes']
+  cDeployAlerts: !Or [ !Condition cDeployEmailAlerts, !Condition cDeploySlackAlerts ]
+
+Resources:
+
+  rOrgSecAlertsSecurityHubRule:
+    Type: AWS::Events::Rule
+    Condition: cDeployAlerts
+    Properties:
+      Name: 'org-sec-alerts-security-hub-rule'
+      Description: 'AWS Security Hub configuration change alerts'
+      EventBusName: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-event-bus-arn'}
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.securityhub'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          eventName:
+            - 'CreateMembers'
+            - 'InviteMembers'
+            - 'AcceptAdministratorInvitation'
+            - 'AcceptInvitation'
+            - 'DeclineInvitations'
+            - 'DeleteInvitations'
+            - 'DisassociateMembers'
+            - 'DeleteMembers'
+            - 'DisassociateFromAdministratorAccount'
+            - 'DisassociateFromMasterAccount'
+            - 'DisableSecurityHub'
+            - 'DisableImportFindingsForProduct'
+            - 'DeleteFindingAggregator'
+            - 'UpdateFindingAggregator'
+            - 'BatchDisableStandards'
+            - 'BatchUpdateStandardsControlAssociations'
+            - 'UpdateStandardsControl'
+            - 'UpdateSecurityControl'
+            - 'CreateAutomationRule'
+            - 'BatchDeleteAutomationRules'
+            - 'BatchUpdateAutomationRules'
+            - 'DeleteConfigurationPolicy'
+            - 'UpdateConfigurationPolicy'
+            - 'StartConfigurationPolicyAssociation'
+            - 'StartConfigurationPolicyDisassociation'
+            - 'EnableOrganizationAdminAccount'
+            - 'DisableOrganizationAdminAccount'
+            - 'TagResource'
+            - 'UntagResource'
+      Targets:
+        - !If
+          - cDeployEmailAlerts
+          - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-email-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+            InputTransformer:
+              InputPathsMap:
+                accountId: $.detail.userIdentity.accountId
+                arn: $.detail.userIdentity.arn
+                awsRegion: $.detail.awsRegion
+                eventID: $.detail.eventID
+                eventName: $.detail.eventName
+                eventTime: $.detail.eventTime
+                principalId: $.detail.userIdentity.principalId
+                sourceIPAddress: $.detail.sourceIPAddress
+                userAgent: $.detail.userAgent
+                userIdentityType: $.detail.userIdentity.type
+                accessKeyId: $.detail.userIdentity.accessKeyId
+                eventSource: $.detail.eventSource
+                resource1: $.detail.requestParameters.AccountDetails
+                resource2: $.detail.requestParameters.AccountIds[*]
+                resource3: $.detail.requestParameters.Identifier
+                resource4: $.detail.requestParameters.RuleName
+                resource5: $.detail.requestParameters.ResourceArn
+                resource6: $.detail.requestParameters.UpdateAutomationRulesRequestItems[*].RuleArn
+                resource7: $.detail.requestParameters.AutomationRulesArns[*]
+                resource8: $.detail.requestParameters.FindingAggregatorArn
+                resource9: $.detail.requestParameters.StandardsSubscriptionArns[*]
+                resource10: $.detail.requestParameters.StandardsControlAssociationUpdates[*].SecurityControlId
+                resource11: $.detail.requestParameters.ConfigurationPolicyIdentifier
+                resource12: $.detail.requestParameters.AdminAccountId
+                resource13: $.detail.requestParameters.StandardsControlArn
+                resource14: $.detail.requestParameters.SecurityControlId
+                errorCode: $.detail.errorCode
+                errorMessage1: $.detail.errorMessage
+                errorMessage2: $.detail.responseElements.UnprocessedAccounts[*]
+              InputTemplate: |
+                "----- ALERT | USER: <userIdentityType> | EVENT: securityhub:<eventName> -----"
+
+                "Account Id.........: <accountId>"
+                "ARN................: <arn>"
+                "Principal Id.......: <principalId>"
+                "Access Key Id......: <accessKeyId>"
+                "Event Time.........: <eventTime>"
+                "Region.............: <awsRegion>"
+                "IP Address.........: <sourceIPAddress>"
+                "User Agent.........: <userAgent>"
+                "Event Source.......: <eventSource>"
+                "CloudTrail Event ID: <eventID>"
+                "Resources Id.......: <resource1><resource2><resource3><resource4><resource5><resource6><resource7><resource8><resource9><resource10><resource11><resource12><resource13><resource14>"
+                "Error Code.........: <errorCode>"
+                "Error Message......: <errorMessage1><errorMessage2>"
+          - !Ref 'AWS::NoValue'
+        - !If
+          - cDeploySlackAlerts
+          - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-slack-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+          - !Ref 'AWS::NoValue'
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
