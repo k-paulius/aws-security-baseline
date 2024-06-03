@@ -100,6 +100,13 @@ Resources:
             - 'DeleteResourceConfig'
             - 'TagResource'
             - 'UntagResource'
+          userIdentity:
+            $or:
+              - invokedBy:
+                  - anything-but:
+                      - securityhub.amazonaws.com
+              - invokedBy:
+                  - exists: false
       Targets:
         - !If
           - cDeployEmailAlerts
@@ -430,4 +437,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.0'
+    Value: '1.0.1'
