@@ -1,0 +1,260 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'S3 Bucket for Amazon GuardDuty findings'
+
+Parameters:
+
+  pBucketNameSuffix:
+    Description: 'Unique 16 character value that will be appended to the bucket name. Accepted values: lower case letters and numbers.'
+    Type: String
+    AllowedPattern: '^[a-z0-9]{16}$'
+    ConstraintDescription: 'Input parameter pBucketNameSuffix must only contain lowercase letters and numbers and be 16 characters long.'
+    MinLength: 16
+
+  pSecurityToolingAccountId:
+    Description: 'Security Tooling Account ID'
+    Type: String
+    AllowedPattern: '^[0-9]{12}$'
+    ConstraintDescription: 'Must be 12 digits'
+
+  pOrgID:
+    Description: 'AWS Organization ID (e.g., o-abc1234567)'
+    Type: String
+    AllowedPattern: '^o-[a-zA-Z0-9]{10}$'
+    ConstraintDescription: 'Must be a valid AWS Organization ID (e.g., o-abc1234567)'
+
+  pKMSKeyArn:
+    Description: 'Bucket Encryption Key ARN'
+    Type: String
+    AllowedPattern: '^$|^arn:(aws[a-zA-Z-]*){1}:kms:[a-z0-9-]+:\d{12}:key\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
+    ConstraintDescription: 'KMS Key ARN example: arn:aws:kms:us-east-1:123456789012:key/ae965708-a783-460a-ae77-fd8f0b8ea511'
+
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
+
+Resources:
+
+  rAccessLoggingBucket:
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'guardduty-findings-${pBucketNameSuffix}-access-logs'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  rAccessLoggingBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref rAccessLoggingBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+
+          - Sid: 'S3ServerAccessLogsPolicy'
+            Effect: Allow
+            Principal:
+              Service: 'logging.s3.amazonaws.com'
+            Action: 's3:PutObject'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${rAccessLoggingBucket}/guardduty-findings-${pBucketNameSuffix}/*'
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:s3:::${rBucket}'
+              StringEquals:
+                aws:SourceAccount: !Sub '${AWS::AccountId}'
+
+          - Sid: 'RestrictToTLSRequestsOnly'
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3:::${rAccessLoggingBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${rAccessLoggingBucket}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+          - Sid: 'DenyExternalPrincipals'
+            Effect: Deny
+            Action: 's3:*'
+            Principal: '*'
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3:::${rAccessLoggingBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${rAccessLoggingBucket}/*'
+            Condition:
+              StringNotEquals:
+                aws:PrincipalOrgID: !Ref pOrgID
+              Bool:
+                aws:PrincipalIsAWSService: false
+
+  rBucket:
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'guardduty-findings-${pBucketNameSuffix}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref pKMSKeyArn
+            BucketKeyEnabled: True
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LoggingConfiguration:
+        DestinationBucketName: !Ref rAccessLoggingBucket
+        LogFilePrefix: !Sub 'guardduty-findings-${pBucketNameSuffix}/'
+        TargetObjectKeyFormat:
+          PartitionedPrefix:
+            PartitionDateSource: EventTime
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  rBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref rBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+
+          - Sid: 'AWSBucketPermissionsCheck'
+            Effect: Allow
+            Principal:
+              Service: 'guardduty.amazonaws.com'
+            Action:
+              - 's3:ListBucket'
+              - 's3:GetBucketLocation'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${rBucket}'
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref pSecurityToolingAccountId
+
+          - Sid: 'AWSGuardDutyBucketDelivery'
+            Effect: Allow
+            Principal:
+              Service: 'guardduty.amazonaws.com'
+            Action: 's3:PutObject'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${rBucket}/AWSLogs/????????????/GuardDuty/*'
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: 'bucket-owner-full-control'
+                aws:SourceAccount: !Ref pSecurityToolingAccountId
+
+          - Sid: 'DenyUnencryptedObjectUploads'
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:PutObject'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${rBucket}/*'
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption: 'aws:kms'
+
+          - Sid: 'DenyWrongKMSKey'
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:PutObject'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${rBucket}/*'
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption-aws-kms-key-id: !Sub ${pKMSKeyArn}
+
+          - Sid: 'RestrictToTLSRequestsOnly'
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3:::${rBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${rBucket}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+          - Sid: 'DenyExternalPrincipals'
+            Effect: Deny
+            Action: 's3:*'
+            Principal: '*'
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3:::${rBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${rBucket}/*'
+            Condition:
+              StringNotEquals:
+                aws:PrincipalOrgID: !Ref pOrgID
+              Bool:
+                aws:PrincipalIsAWSService: false
+
+Outputs:
+
+  oBucketName:
+    Description: 'Bucket Name'
+    Value: !Ref rBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-bucket-name'
+
+  oBucketArn:
+    Description: 'Bucket ARN'
+    Value: !GetAtt rBucket.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-bucket-arn'
+
+  oAccessLoggingBucketName:
+    Description: 'S3 Access Logs Bucket Name'
+    Value: !Ref rAccessLoggingBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-access-logs-bucket-name'
+
+  oAccessLoggingBucketArn:
+    Description: 'S3 Access Logs Bucket ARN'
+    Value: !GetAtt rAccessLoggingBucket.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-access-logs-bucket-arn'
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

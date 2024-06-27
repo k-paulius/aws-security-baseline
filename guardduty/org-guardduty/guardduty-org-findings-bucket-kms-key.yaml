@@ -1,0 +1,100 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'KMS Key for encrypting Amazon GuardDuty findings bucket'
+
+Parameters:
+
+  pSecurityToolingAccountId:
+    Description: 'Security Tooling Account ID'
+    Type: String
+    AllowedPattern: '^[0-9]{12}$'
+    ConstraintDescription: 'Must be 12 digits'
+
+  pKeyAlias:
+    Description: 'KMS Key Alias'
+    Type: String
+
+  pWorkloadIdTag:
+    Description: 'Workload Id (value used in the "workload-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Workload Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pEnvironmentIdTag:
+    Description: 'Environment Id (value used in the "environment-id" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Environment Id value must contain only alphanumeric characters, hyphens, and underscores'
+
+  pOwnerNameTag:
+    Description: 'Owner Name (value used in the "owner" tag)'
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-_]+'
+    ConstraintDescription: 'Owner name value must contain only alphanumeric characters, hyphens, and underscores'
+
+Resources:
+
+  rBucketKey:
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Type: AWS::KMS::Key
+    Properties:
+      Description: 'Amazon GuardDuty Findings bucket key'
+      Enabled: true
+      EnableKeyRotation: true
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyUsage: ENCRYPT_DECRYPT
+      MultiRegion: false
+      Origin: AWS_KMS
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: 'KMSKey'
+        Statement:
+
+          - Sid: 'EnableIAMUserPermissions'
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+
+          - Sid: 'GuardDutyKMSPolicy'
+            Effect: Allow
+            Principal:
+              Service: 'guardduty.amazonaws.com'
+            Action: 'kms:GenerateDataKey'
+            Resource: '*'
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref pSecurityToolingAccountId
+                #aws:SourceArn: 'arn:${Partition}:guardduty:${Region}:${Account}:detector/${DetectorId}'
+      Tags:
+        - Key: 'workload-id'
+          Value: !Ref pWorkloadIdTag
+        - Key: 'environment-id'
+          Value: !Ref pEnvironmentIdTag
+        - Key: 'owner'
+          Value: !Ref pOwnerNameTag
+
+  rBucketKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${pKeyAlias}'
+      TargetKeyId: !Ref rBucketKey
+
+Outputs:
+
+  oBucketKeyArn:
+    Description: 'KMS Key ARN'
+    Value: !GetAtt rBucketKey.Arn
+    Export:
+      Name: !Sub '${pKeyAlias}-arn'
+
+  oBucketKeyAliasName:
+    Description: 'KMS Key Alias Name'
+    Value: !Ref rBucketKeyAlias
+    Export:
+      Name: !Sub '${pKeyAlias}-alias-name'
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
