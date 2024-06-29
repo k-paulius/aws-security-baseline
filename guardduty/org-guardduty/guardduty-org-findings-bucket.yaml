@@ -181,7 +181,7 @@ Resources:
             Principal:
               Service: 'guardduty.amazonaws.com'
             Action: 's3:PutObject'
-            Resource: !Sub 'arn:${AWS::Partition}:s3:::${rBucket}/AWSLogs/????????????/GuardDuty/*'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${rBucket}/*'
             Condition:
               StringEquals:
                 s3:x-amz-acl: 'bucket-owner-full-control'
