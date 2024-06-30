@@ -62,3 +62,7 @@
     - `scripts`
         - AWS Security Hub related scripts
         - [Readme](security-hub/scripts/README.md)
+- `vpc`
+    - `scripts`
+        - Amazon VPC related scripts
+        - [Readme](vpc/scripts/README.md)
