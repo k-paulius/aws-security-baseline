@@ -15,7 +15,7 @@ This solution deploys AWS Config in all existing and future AWS Organization mem
 Enable AWS Config (`config.amazonaws.com`) and AWS Config Multi-Account Setup (`config-multiaccountsetup.amazonaws.com`) as a Trusted Service in Organizations.
 
 ```bash
-./../../bin/enable_trusted_access_for_config.sh
+./../scripts/enable_trusted_access_for_config.sh
 ```
 
 ### Step 2: Register a Delegated Administrator Account
@@ -23,7 +23,7 @@ Enable AWS Config (`config.amazonaws.com`) and AWS Config Multi-Account Setup (`
 Register the security tooling account as a delegated administrator for AWS Config and AWS Config Multi-Account Setup.
 
 ```bash
-./../../bin/enable_delegated_admin_for_config.sh 222222222222
+./../scripts/enable_delegated_admin_for_config.sh 222222222222
 ```
 
 ### Step 3: Deploy `aws-config-org-deployment.yaml`
