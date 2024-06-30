@@ -13,6 +13,13 @@
     - `cfn-template-bucket.yaml`
         - S3 bucket for CloudFormation template storage
     - [Readme](cloudformation/README.md)
+- `cloudtrail`
+    - `org-cloudtrail`
+        - AWS CloudTrail organization trail solution.
+        - [Readme](logging/org-cloudtrail/README.md)
+    - `scripts`
+        - AWS CloudTrail related scripts
+        - [Readme](logging/scripts/README.md)
 - `config`
     - `org-config`
         - Organizational AWS Config deployment solution.
@@ -36,13 +43,6 @@
         - `scripts`
             - AWS IAM Access Analyzer related scripts
             - [Readme](iam/access-analyzer/scripts/README.md)
-- `logging`
-    - `org-cloudtrail`
-        - AWS CloudTrail organization trail solution.
-        - [Readme](logging/org-cloudtrail/README.md)
-    - `scripts`
-        - AWS CloudTrail related scripts
-        - [Readme](logging/scripts/README.md)
 - `policies`
     - [Readme](policies/README.md)
 - `s3`
