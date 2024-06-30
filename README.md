@@ -7,9 +7,6 @@
 - `billing`
     - `monthly-cost-budget.yaml`
         - Monthly cost budget with alerts. Receive an alert when costs reach your set limit, either actual or forecasted.
-- `bin`
-    - Shell scripts.
-    - [Readme](bin/README.md)
 - `cloudformation`
     - `stackset-roles`
         - IAM roles required for deploying CloudFormation StackSets with self-managed permissions
@@ -24,18 +21,38 @@
         - Organizational AWS Config conformance pack deployment solution
     - `org-config-rules`
         - Organizational AWS Config rule deployment solution
+    - `scripts`
+        - AWS Config related scripts
+        - [Readme](config/scripts/README.md)
     - [Readme](config/README.md)
+- `ec2`
+    - `scripts`
+        - Amazon EC2 related scripts
+        - [Readme](ec2/scripts/README.md)
 - `iam`
     - `access-analyzer`
         - Organizational AWS IAM Access Analyzer Deployment
         - [Readme](iam/access-analyzer/README.md)
+        - `scripts`
+            - AWS IAM Access Analyzer related scripts
+            - [Readme](iam/access-analyzer/scripts/README.md)
 - `logging`
     - `org-cloudtrail`
         - AWS CloudTrail organization trail solution.
         - [Readme](logging/org-cloudtrail/README.md)
+    - `scripts`
+        - AWS CloudTrail related scripts
+        - [Readme](logging/scripts/README.md)
 - `policies`
     - [Readme](policies/README.md)
+- `s3`
+    - `scripts`
+        - Amazon S3 related scripts
+        - [Readme](s3/scripts/README.md)
 - `security-hub`
     - `org-security-hub`
         - Organizational AWS Security Hub Deployment
         - [Readme](security-hub/org-security-hub/README.md)
+    - `scripts`
+        - AWS Security Hub related scripts
+        - [Readme](security-hub/scripts/README.md)

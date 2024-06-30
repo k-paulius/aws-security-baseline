@@ -11,7 +11,7 @@ This solution deploys AWS IAM Access Analyzer in all existing and future AWS Org
 Enable AWS IAM Access Analyzer as a Trusted Service in Organizations.
 
 ```bash
-./../../bin/enable_trusted_access_for_access_analyzer.sh
+./scripts/enable_trusted_access_for_access_analyzer.sh
 ```
 
 ### Step 2: Register a Delegated Administrator Account
@@ -19,7 +19,7 @@ Enable AWS IAM Access Analyzer as a Trusted Service in Organizations.
 Register the security tooling account as a delegated administrator for AWS IAM Access Analyzer.
 
 ```bash
-./../../bin/enable_delegated_admin_for_access_analyzer.sh 222222222222
+./scripts/enable_delegated_admin_for_access_analyzer.sh 222222222222
 ```
 
 ### Step 3: Deploy `iam-access-analyzer-deployment.yaml`

@@ -15,7 +15,7 @@ This solution requires you to deploy three CloudFormation stacks.
 Register the Security Tooling account as a delegated administrator for AWS CloudTrail.
 
 ```bash
-./../bin/enable_delegated_admin_for_cloudtrail.sh 222222222222
+./../scripts/enable_delegated_admin_for_cloudtrail.sh 222222222222
 ```
 
 ### Step 2: Deploy `org-cloudtrail-aux.yaml`
