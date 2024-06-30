@@ -36,6 +36,12 @@
     - `scripts`
         - Amazon EC2 related scripts
         - [Readme](ec2/scripts/README.md)
+- `guardduty`
+    - `org-guardduty`
+        - Organizational Amazon GuardDuty deployment templates
+    - `scripts`
+        - Amazon GuardDuty related scripts
+        - [Readme](guardduty/scripts/README.md)
 - `iam`
     - `access-analyzer`
         - Organizational AWS IAM Access Analyzer Deployment
