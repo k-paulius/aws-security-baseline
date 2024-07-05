@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'AWS Security Hub Finding Alerts'
+
+Parameters:
+
+  pCentralBusStackName:
+    Description: 'Central Bus Stack Name'
+    Type: String
+
+  pSendEmailAlerts:
+    Description: 'Send e-mail alerts?'
+    Type: String
+    Default: 'no'
+    AllowedValues:
+         - 'yes'
+         - 'no'
+
+  pSendSlackAlerts:
+    Description: 'Send Slack alerts?'
+    Type: String
+    Default: 'no'
+    AllowedValues:
+         - 'yes'
+         - 'no'
+
+Conditions:
+
+  cDeployEmailAlerts: !Equals [!Ref pSendEmailAlerts, 'yes']
+  cDeploySlackAlerts: !Equals [!Ref pSendSlackAlerts, 'yes']
+  cDeployAlerts: !Or [ !Condition cDeployEmailAlerts, !Condition cDeploySlackAlerts ]
+
+Resources:
+
+  rOrgSecAlertsSecurityHubFindingsRule:
+    Type: AWS::Events::Rule
+    Condition: cDeployAlerts
+    Properties:
+      Name: 'org-sec-alerts-security-hub-findings-rule'
+      Description: 'AWS Security Hub finding alerts'
+      EventBusName: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-event-bus-arn'}
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.securityhub'
+        detail-type:
+          - 'Security Hub Findings - Imported'
+        detail:
+          findings:
+            Workflow:
+              Status:
+                - 'NEW'
+                - 'NOTIFIED'
+            RecordState:
+              - 'ACTIVE'
+      Targets:
+        - !If
+          - cDeployEmailAlerts
+          - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-email-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+            InputTransformer:
+              InputPathsMap:
+                awsAccountId: $.detail.findings[0].AwsAccountId
+                awsAccountName: $.detail.findings[0].AwsAccountName
+                awsRegion: $.detail.findings[0].Region
+                findingId: $.detail.findings[0].Id
+                productName: $.detail.findings[0].ProductName
+                workflowStatus: $.detail.findings[0].Workflow.Status
+                recordState: $.detail.findings[0].RecordState
+                title: $.detail.findings[0].Title
+                description: $.detail.findings[0].Description
+                types: $.detail.findings[0].Types[*]
+                severity: $.detail.findings[0].Severity.Label
+                firstObservedAt: $.detail.findings[0].FirstObservedAt
+                lastObservedAt: $.detail.findings[0].LastObservedAt
+              InputTemplate: |
+                "----- SECURITY HUB FINDING | <awsAccountId> | <awsRegion> | <productName> | <severity> -----"
+
+                "Finding..............: <title>"
+                "Description..........: <description>"
+
+                "Severity Label.......: <severity>"
+                "Workflow Status......: <workflowStatus>"
+                "Record State.........: <recordState>"
+                "Account Id/Name......: <awsAccountId> / <awsAccountName>"
+                "Region...............: <awsRegion>"
+                "Product Name.........: <productName>"
+                "Types................: <types>"
+                "First Observed.......: <firstObservedAt>"
+                "Last Observed........: <lastObservedAt>"
+                "Finding Id...........: <findingId>"
+          - !Ref 'AWS::NoValue'
+        - !If
+          - cDeploySlackAlerts
+          - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-slack-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+          - !Ref 'AWS::NoValue'
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
