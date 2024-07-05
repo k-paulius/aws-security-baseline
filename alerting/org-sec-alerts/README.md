@@ -233,18 +233,9 @@ aws cloudformation deploy \
   - `org-sec-alerts-slack-channel-role`           - IAM role for AWS Chatbot Slack channel
 
 - `org-sec-alerts-event-fwding.yaml` deploys:
-  - `org-sec-alerts-root-signin-fwd-rule`         - EventBridge event forwarding rule
-  - `org-sec-alerts-root-iam-fwd-rule`            - EventBridge event forwarding rule
-  - `org-sec-alerts-root-sts-fwd-rule`            - EventBridge event forwarding rule
-  - `org-sec-alerts-account-fwd-rule`             - EventBridge event forwarding rule
-  - `org-sec-alerts-kms-fwd-rule`                 - EventBridge event forwarding rule
-  - `org-sec-alerts-cloudtrail-fwd-rule`          - EventBridge event forwarding rule
-  - `org-sec-alerts-s3-fwd-rule`                  - EventBridge event forwarding rule
-  - `org-sec-alerts-cloudwatch-fwd-rule`          - EventBridge event forwarding rule
-  - `org-sec-alerts-sns-fwd-rule`                 - EventBridge event forwarding rule
-  - `org-sec-alerts-organizations-fwd-rule`       - EventBridge event forwarding rule
-  - `org-sec-alerts-config-fwd-rule`              - EventBridge event forwarding rule
   - `org-sec-alerts-event-fwd-rule-role`          - EventBridge Rule IAM execution role
+  - `org-sec-alerts-root-signin-fwd-rule`         - EventBridge event forwarding rule
+  - `org-sec-alerts-mgmt-event-fwd-rule`          - EventBridge event forwarding rule
 
 - `org-sec-alerts-deployment.yaml` deploys:
   - `rSecAlertCentralBusStack`                    - Stack for `org-sec-alerts-central-bus.yaml`
