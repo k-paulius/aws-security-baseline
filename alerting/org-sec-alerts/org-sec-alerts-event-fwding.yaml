@@ -40,13 +40,14 @@ Parameters:
 
 Conditions:
 
-  cDeployGlobalResources: !Equals [ !Ref 'AWS::Region', !Ref pHomeRegion ]
+  cIsHomeRegion: !Equals [ !Ref 'AWS::Region', !Ref pHomeRegion ]
   cIsSecurityToolingAccount: !Equals [ !Ref 'AWS::AccountId', !Ref pSecurityToolingAccountId ]
+  cIsSecurityToolingAccountHomeRegion: !And [!Condition cIsSecurityToolingAccount, !Condition cIsHomeRegion]
 
 Resources:
 
   rOrgSecAlertsEventFwdRuleRole:
-    Condition: cDeployGlobalResources
+    Condition: cIsHomeRegion
     Type: AWS::IAM::Role
     Properties:
       RoleName: 'org-sec-alerts-event-fwd-rule-role'
@@ -148,8 +149,28 @@ Resources:
           Arn: !Ref pOrgSecEventBus
           RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
 
+  rOrgSecAlertsSecurityHubRule:
+    Condition: cIsSecurityToolingAccountHomeRegion
+    Type: AWS::Events::Rule
+    Properties:
+      Name: 'org-sec-alerts-securityhub-fwd-rule'
+      Description: 'Forwards all Security Hub events to the central event bus'
+      EventBusName: default
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.securityhub'
+        detail-type:
+          - 'Security Hub Findings - Imported'
+          #- 'Security Hub Findings - Custom Action'
+          #- 'Security Hub Insight Results'
+      Targets:
+        - Id: 'rOrgSecEventBus'
+          Arn: !Ref pOrgSecEventBus
+          RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
+
 Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.14'
+    Value: '1.0.15'

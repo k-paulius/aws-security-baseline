@@ -237,7 +237,8 @@ aws cloudformation deploy \
   - `org-sec-alerts-event-fwd-rule-role`          - EventBridge Rule IAM execution role
   - `org-sec-alerts-root-signin-fwd-rule`         - EventBridge event forwarding rule
   - `org-sec-alerts-mgmt-event-fwd-rule`          - EventBridge event forwarding rule
-  - `org-sec-alerts-guardduty-fwd-rule`           - EventBridge event forwarding rule (only deployed in every region of Security Tooling account)
+  - `org-sec-alerts-guardduty-fwd-rule`           - EventBridge event forwarding rule (only deployed in every region of the Security Tooling account)
+  - `org-sec-alerts-securityhub-fwd-rule`         - EventBridge event forwarding rule (only deployed in home region of the Security Tooling account)
 
 - `org-sec-alerts-deployment.yaml` deploys:
   - `rSecAlertCentralBusStack`                    - Stack for `org-sec-alerts-central-bus.yaml`
