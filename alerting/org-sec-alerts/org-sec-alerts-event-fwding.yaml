@@ -13,6 +13,12 @@ Parameters:
     AllowedPattern: '^[a-z0-9-]{1,64}$'
     ConstraintDescription: 'Must be AWS Region (e.g. us-east-1)'
 
+  pSecurityToolingAccountId:
+    Description: 'Security Tooling Account ID'
+    Type: String
+    AllowedPattern: '^[0-9]{12}$'
+    ConstraintDescription: 'Must be 12 digits'
+
   pWorkloadIdTag:
     Description: 'Workload Id (value used in the "workload-id" tag)'
     Type: String
@@ -35,6 +41,7 @@ Parameters:
 Conditions:
 
   cDeployGlobalResources: !Equals [ !Ref 'AWS::Region', !Ref pHomeRegion ]
+  cIsSecurityToolingAccount: !Equals [ !Ref 'AWS::AccountId', !Ref pSecurityToolingAccountId ]
 
 Resources:
 
@@ -121,8 +128,28 @@ Resources:
           Arn: !Ref pOrgSecEventBus
           RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
 
+  rOrgSecAlertsGuardDutyRule:
+    Condition: cIsSecurityToolingAccount
+    Type: AWS::Events::Rule
+    Properties:
+      Name: 'org-sec-alerts-guardduty-fwd-rule'
+      Description: 'Forwards all GuardDuty events to the central event bus'
+      EventBusName: default
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.guardduty'
+        detail-type:
+          - 'GuardDuty Finding'
+          - 'GuardDuty Runtime Protection Healthy'
+          - 'GuardDuty Runtime Protection Unhealthy'
+      Targets:
+        - Id: 'rOrgSecEventBus'
+          Arn: !Ref pOrgSecEventBus
+          RoleArn: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/org-sec-alerts-event-fwd-rule-role'
+
 Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.13'
+    Value: '1.0.14'

@@ -42,6 +42,12 @@ Parameters:
     AllowedPattern: '^[0-9]{12}$'
     ConstraintDescription: 'Must be 12 digits'
 
+  pSecurityToolingAccountId:
+    Description: 'Security Tooling Account ID'
+    Type: String
+    AllowedPattern: '^[0-9]{12}$'
+    ConstraintDescription: 'Must be 12 digits'
+
   pDeployEmailAlerts:
     Description: 'Deploy e-mail alerts? (When enabled, deploys an SNS topic subscribed to the specified email)'
     Type: String
@@ -148,6 +154,8 @@ Resources:
           ParameterValue: !GetAtt [rSecAlertCentralBusStack, Outputs.oOrgSecEventBusArn]
         - ParameterKey: pHomeRegion
           ParameterValue: !Ref AWS::Region
+        - ParameterKey: pSecurityToolingAccountId
+          ParameterValue: !Ref pSecurityToolingAccountId
         - ParameterKey: pWorkloadIdTag
           ParameterValue: !Ref pWorkloadIdTag
         - ParameterKey: pEnvironmentIdTag
@@ -193,6 +201,8 @@ Resources:
           ParameterValue: !GetAtt [rSecAlertCentralBusStack, Outputs.oOrgSecEventBusArn]
         - ParameterKey: pHomeRegion
           ParameterValue: !Ref AWS::Region
+        - ParameterKey: pSecurityToolingAccountId
+          ParameterValue: !Ref pSecurityToolingAccountId
         - ParameterKey: pWorkloadIdTag
           ParameterValue: !Ref pWorkloadIdTag
         - ParameterKey: pEnvironmentIdTag
@@ -211,4 +221,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.4'
+    Value: '1.0.5'
