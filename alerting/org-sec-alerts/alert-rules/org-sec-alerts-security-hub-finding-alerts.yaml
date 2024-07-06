@@ -74,6 +74,8 @@ Resources:
                 severity: $.detail.findings[0].Severity.Label
                 firstObservedAt: $.detail.findings[0].FirstObservedAt
                 lastObservedAt: $.detail.findings[0].LastObservedAt
+                createdAt: $.detail.findings[0].CreatedAt
+                updatedAt: $.detail.findings[0].UpdatedAt
               InputTemplate: |
                 "----- SECURITY HUB FINDING | <awsAccountId> | <awsRegion> | <productName> | <severity> -----"
 
@@ -87,8 +89,10 @@ Resources:
                 "Region...............: <awsRegion>"
                 "Product Name.........: <productName>"
                 "Types................: <types>"
-                "First Observed.......: <firstObservedAt>"
-                "Last Observed........: <lastObservedAt>"
+                "First Observed Date..: <firstObservedAt>"
+                "Last Observed Date...: <lastObservedAt>"
+                "Create Date..........: <createdAt>"
+                "Last Update Date.....: <updatedAt>"
                 "Finding Id...........: <findingId>"
           - !Ref 'AWS::NoValue'
         - !If
@@ -103,4 +107,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.0'
+    Value: '1.0.1'
