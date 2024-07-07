@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'SCP: Prevent Amazon GuardDuty Tampering'
+
+Parameters:
+
+  pPolicyName:
+    Description: 'Policy Name'
+    Type: String
+    Default: 'PreventGuardDutyTampering'
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rPolicy:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: !Ref pPolicyName
+      Description: 'Prevent Amazon GuardDuty Tampering'
+      Content:
+        Version: '2012-10-17'
+        Statement:
+
+          - Sid: PreventGuardDutyTampering
+            Effect: Deny
+            Action:
+              - 'guardduty:CreateMembers'
+              - 'guardduty:InviteMembers'
+              - 'guardduty:AcceptInvitation'
+              - 'guardduty:AcceptAdministratorInvitation'
+              - 'guardduty:DisassociateMembers'
+              - 'guardduty:DeclineInvitations'
+              - 'guardduty:DeleteInvitations'
+              - 'guardduty:DeleteMembers'
+              - 'guardduty:DisassociateFromAdministratorAccount'
+              - 'guardduty:DisassociateFromMasterAccount'
+
+              - 'guardduty:ArchiveFindings'
+              - 'guardduty:UnarchiveFindings'
+              - 'guardduty:UpdateFindingsFeedback'
+
+              - 'guardduty:CreateDetector'
+              - 'guardduty:UpdateDetector'
+              - 'guardduty:UpdateMemberDetectors'
+              - 'guardduty:DeleteDetector'
+
+              - 'guardduty:UpdateOrganizationConfiguration'
+              - 'guardduty:StartMonitoringMembers'
+              - 'guardduty:StopMonitoringMembers'
+
+              - 'guardduty:CreateFilter'
+              - 'guardduty:UpdateFilter'
+              - 'guardduty:DeleteFilter'
+
+              - 'guardduty:CreateIPSet'
+              - 'guardduty:UpdateIPSet'
+              - 'guardduty:DeleteIPSet'
+
+              - 'guardduty:CreateMalwareProtectionPlan'
+              - 'guardduty:UpdateMalwareProtectionPlan'
+              - 'guardduty:DeleteMalwareProtectionPlan'
+              - 'guardduty:UpdateMalwareScanSettings'
+
+              - 'guardduty:CreatePublishingDestination'
+              - 'guardduty:UpdatePublishingDestination'
+              - 'guardduty:DeletePublishingDestination'
+
+              - 'guardduty:CreateThreatIntelSet'
+              - 'guardduty:DeleteThreatIntelSet'
+              - 'guardduty:UpdateThreatIntelSet'
+
+              - 'guardduty:TagResource'
+              - 'guardduty:UntagResource'
+            Resource:
+              - '*'
+            Condition:
+              ArnNotLike:
+                'aws:PrincipalArn':
+                  - 'arn:aws:iam::*:role/[AUTOMATION_ROLE]'
+      TargetIds:
+        - !Ref pTargetIds
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
