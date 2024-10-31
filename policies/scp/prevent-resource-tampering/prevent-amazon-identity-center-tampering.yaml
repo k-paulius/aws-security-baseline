@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'SCP: Prevent AWS IAM Identity Center Tampering'
+
+Parameters:
+
+  pPolicyName:
+    Description: 'Policy Name'
+    Type: String
+    Default: 'PreventIdentityCenterTampering'
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rPolicy:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: !Ref pPolicyName
+      Description: 'Prevent AWS IAM Identity Center Tampering'
+      Content:
+        Version: '2012-10-17'
+        Statement:
+
+          - Sid: PreventIdentityCenterTampering
+            Effect: Deny
+            Action:
+              - 'sso:CreateInstance'
+              - 'sso:UpdateInstance'
+              - 'sso:DeleteInstance'
+
+              - 'sso:CreateInstanceAccessControlAttributeConfiguration'
+              - 'sso:UpdateInstanceAccessControlAttributeConfiguration'
+              - 'sso:DeleteInstanceAccessControlAttributeConfiguration'
+
+              - 'sso:CreateTrustedTokenIssuer'
+              - 'sso:UpdateTrustedTokenIssuer'
+              - 'sso:DeleteTrustedTokenIssuer'
+
+              - 'sso:CreatePermissionSet'
+              - 'sso:UpdatePermissionSet'
+              - 'sso:DeletePermissionSet'
+              - 'sso:ProvisionPermissionSet'
+
+              - 'sso:CreateAccountAssignment'
+              - 'sso:DeleteAccountAssignment'
+
+              - 'sso:AttachManagedPolicyToPermissionSet'
+              - 'sso:DetachManagedPolicyFromPermissionSet'
+
+              - 'sso:AttachCustomerManagedPolicyReferenceToPermissionSet'
+              - 'sso:DetachCustomerManagedPolicyReferenceFromPermissionSet'
+
+              - 'sso:PutInlinePolicyToPermissionSet'
+              - 'sso:DeleteInlinePolicyFromPermissionSet'
+
+              - 'sso:PutPermissionsBoundaryToPermissionSet'
+              - 'sso:DeletePermissionsBoundaryFromPermissionSet'
+
+              - 'sso:CreateApplication'
+              - 'sso:UpdateApplication'
+              - 'sso:DeleteApplication'
+
+              - 'sso:CreateApplicationAssignment'
+              - 'sso:PutApplicationAssignmentConfiguration'
+              - 'sso:DeleteApplicationAssignment'
+
+              - 'sso:PutApplicationAccessScope'
+              - 'sso:DeleteApplicationAccessScope'
+
+              - 'sso:PutApplicationAuthenticationMethod'
+              - 'sso:DeleteApplicationAuthenticationMethod'
+
+              - 'sso:PutApplicationGrant'
+              - 'sso:DeleteApplicationGrant'
+
+              - 'sso:TagResource'
+              - 'sso:UntagResource'
+            Resource:
+              - '*'
+            Condition:
+              ArnNotLike:
+                'aws:PrincipalArn':
+                  - 'arn:aws:iam::*:role/[AUTOMATION_ROLE]'
+      TargetIds:
+        - !Ref pTargetIds
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
