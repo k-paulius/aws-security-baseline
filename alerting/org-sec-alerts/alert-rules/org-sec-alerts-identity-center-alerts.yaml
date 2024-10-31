@@ -1,0 +1,155 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'AWS IAM Identity Center Configuration Change Alerts'
+
+Parameters:
+
+  pCentralBusStackName:
+    Description: 'Central Bus Stack Name'
+    Type: String
+
+  pSendEmailAlerts:
+    Description: 'Send e-mail alerts?'
+    Type: String
+    Default: 'no'
+    AllowedValues:
+         - 'yes'
+         - 'no'
+
+  pSendSlackAlerts:
+    Description: 'Send Slack alerts?'
+    Type: String
+    Default: 'no'
+    AllowedValues:
+         - 'yes'
+         - 'no'
+
+Conditions:
+
+  cDeployEmailAlerts: !Equals [!Ref pSendEmailAlerts, 'yes']
+  cDeploySlackAlerts: !Equals [!Ref pSendSlackAlerts, 'yes']
+  cDeployAlerts: !Or [ !Condition cDeployEmailAlerts, !Condition cDeploySlackAlerts ]
+
+Resources:
+
+  rOrgSecAlertsIdentityCenterRule:
+    Type: AWS::Events::Rule
+    Condition: cDeployAlerts
+    Properties:
+      Name: 'org-sec-alerts-identitycenter-rule'
+      Description: 'AWS IAM Identity Center configuration change alerts'
+      EventBusName: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-event-bus-arn'}
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.sso'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          eventName:
+            - 'CreateInstance'
+            - 'UpdateInstance'
+            - 'DeleteInstance'
+
+            - 'CreateInstanceAccessControlAttributeConfiguration'
+            - 'UpdateInstanceAccessControlAttributeConfiguration'
+            - 'DeleteInstanceAccessControlAttributeConfiguration'
+
+            - 'CreateTrustedTokenIssuer'
+            - 'UpdateTrustedTokenIssuer'
+            - 'DeleteTrustedTokenIssuer'
+
+            - 'CreatePermissionSet'
+            - 'UpdatePermissionSet'
+            - 'DeletePermissionSet'
+            - 'ProvisionPermissionSet'
+
+            - 'CreateAccountAssignment'
+            - 'DeleteAccountAssignment'
+
+            - 'AttachManagedPolicyToPermissionSet'
+            - 'DetachManagedPolicyFromPermissionSet'
+
+            - 'AttachCustomerManagedPolicyReferenceToPermissionSet'
+            - 'DetachCustomerManagedPolicyReferenceFromPermissionSet'
+
+            - 'PutInlinePolicyToPermissionSet'
+            - 'DeleteInlinePolicyFromPermissionSet'
+
+            - 'PutPermissionsBoundaryToPermissionSet'
+            - 'DeletePermissionsBoundaryFromPermissionSet'
+
+            - 'CreateApplication'
+            - 'UpdateApplication'
+            - 'DeleteApplication'
+
+            - 'CreateApplicationAssignment'
+            - 'PutApplicationAssignmentConfiguration'
+            - 'DeleteApplicationAssignment'
+
+            - 'PutApplicationAccessScope'
+            - 'DeleteApplicationAccessScope'
+
+            - 'PutApplicationAuthenticationMethod'
+            - 'DeleteApplicationAuthenticationMethod'
+
+            - 'PutApplicationGrant'
+            - 'DeleteApplicationGrant'
+
+            - 'TagResource'
+            - 'UntagResource'
+      Targets:
+        - !If
+          - cDeployEmailAlerts
+          - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-email-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+            InputTransformer:
+              InputPathsMap:
+                accountId: $.detail.userIdentity.accountId
+                arn: $.detail.userIdentity.arn
+                awsRegion: $.detail.awsRegion
+                eventID: $.detail.eventID
+                eventName: $.detail.eventName
+                eventTime: $.detail.eventTime
+                principalId: $.detail.userIdentity.principalId
+                sourceIPAddress: $.detail.sourceIPAddress
+                userAgent: $.detail.userAgent
+                userIdentityType: $.detail.userIdentity.type
+                accessKeyId: $.detail.userIdentity.accessKeyId
+                eventSource: $.detail.eventSource
+                resource1: $.detail.requestParameters.detectorId
+                resource2: $.detail.responseElements.detectorId
+                resource3: $.detail.requestParameters.resourceArn
+                errorCode: $.detail.errorCode
+                errorMessage1: $.detail.errorMessage
+              InputTemplate: |
+                "----- ALERT | USER: <userIdentityType> | EVENT: sso:<eventName> -----"
+
+                "Account Id.........: <accountId>"
+                "ARN................: <arn>"
+                "Principal Id.......: <principalId>"
+                "Access Key Id......: <accessKeyId>"
+                "Event Time.........: <eventTime>"
+                "Region.............: <awsRegion>"
+                "IP Address.........: <sourceIPAddress>"
+                "User Agent.........: <userAgent>"
+                "Event Source.......: <eventSource>"
+                "CloudTrail Event ID: <eventID>"
+                "Resources Id.......: <resource1><resource2><resource3>"
+                "Error Code.........: <errorCode>"
+                "Error Message......: <errorMessage1>"
+          - !Ref 'AWS::NoValue'
+        - !If
+          - cDeploySlackAlerts
+          - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-slack-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+          - !Ref 'AWS::NoValue'
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

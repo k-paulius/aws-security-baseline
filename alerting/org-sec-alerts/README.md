@@ -104,6 +104,8 @@ Currently monitored and alerted activities:
     - This stack depends on `org-sec-alerts-central-bus.yaml` stack.
   - `alert-rules/org-sec-alerts-guardduty-alerts.yaml` - This stack sets up EventBridge rules to trigger alerts upon detecting changes to Amazon GuardDuty configuration.
     - This stack depends on `org-sec-alerts-central-bus.yaml` stack.
+  - `alert-rules/org-sec-alerts-identity-center-alerts.yaml` - This stack sets up EventBridge rules to trigger alerts upon detecting changes to AWS IAM Identity Center configuration.
+    - This stack depends on `org-sec-alerts-central-bus.yaml` stack.
 
 ### Step 1: Deploy `org-sec-alerts-deployment.yaml`
 ---
@@ -256,6 +258,21 @@ aws cloudformation deploy \
         pSendSlackAlerts=yes
 ```
 
+### (Optional) Step 9: Deploy `org-sec-alerts-identity-center-alerts.yaml`
+---
+- If you want to receive email alerts you must deploy central bus stack with parameter `pDeployEmailAlerts=yes` and set `pSendEmailAlerts` value to `yes`.
+- If you want to receive Slack alerts you must deploy central bus stack with parameter `pDeploySlackAlerts=yes` and set `pSendSlackAlerts` value to `yes`.
+
+```bash
+aws cloudformation deploy \
+    --template-file org-sec-alerts-identity-center-alerts.yaml \
+    --stack-name org-sec-alerts-identity-center-alerts \
+    --parameter-overrides \
+        pCentralBusStackName="org-sec-alerts-central-bus" \
+        pSendEmailAlerts=yes \
+        pSendSlackAlerts=yes
+```
+
 
 ## Deployed Resources
 
@@ -309,3 +326,6 @@ aws cloudformation deploy \
 
 - `org-sec-alerts-guardduty-alerts.yaml` deploys:
   - `org-sec-alerts-guardduty-rule`               - EventBridge alert rule
+
+- `org-sec-alerts-identity-center-alerts.yaml` deploys:
+  - `org-sec-alerts-identitycenter-rule`          - EventBridge alert rule
