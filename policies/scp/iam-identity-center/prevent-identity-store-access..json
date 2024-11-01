@@ -1,0 +1,21 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DenyIdentityStoreAccess",
+            "Effect": "Deny",
+            "Action": [
+                "identitystore:*",
+                "sso-directory:*"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringNotEquals": {
+                    "aws:PrincipalAccount": [
+                        "<ALLOWED-ACCOUNT-ID>"
+                    ]
+                }
+            }
+        }
+    ]
+}

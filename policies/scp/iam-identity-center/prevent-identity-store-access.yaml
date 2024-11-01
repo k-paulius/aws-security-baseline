@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'SCP: Prevent AWS IAM Identity Center Identity Store Access'
+
+Parameters:
+
+  pPolicyName:
+    Description: 'Policy Name'
+    Type: String
+    Default: 'PreventIdCIdentityStoreAccess'
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rPolicy:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: !Ref pPolicyName
+      Description: 'Prevent AWS IAM Identity Center Identity Store Access'
+      Content:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyIdentityStoreAccess
+            Effect: Deny
+            Action:
+              - 'identitystore:*'
+              - 'sso-directory:*'
+            Resource: '*'
+            Condition:
+              StringNotEquals:
+                'aws:PrincipalAccount':
+                  - <ALLOWED-ACCOUNT-ID>
+      TargetIds:
+        - !Ref pTargetIds
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'
