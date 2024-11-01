@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'SCP: Prevent AWS IAM Identity Center Account Instance Creation'
+
+Parameters:
+
+  pPolicyName:
+    Description: 'Policy Name'
+    Type: String
+    Default: 'PreventIdCAccountInstanceCreation'
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rPolicy:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: !Ref pPolicyName
+      Description: 'Prevent AWS IAM Identity Center Account Instance Creation'
+      Content:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyMemberAccountInstances
+            Effect: Deny
+            Action: 'sso:CreateInstance'
+            Resource: '*'
+            Condition:
+              StringNotEquals:
+                'aws:PrincipalAccount':
+                  - <ALLOWED-ACCOUNT-ID>
+      TargetIds:
+        - !Ref pTargetIds
+
+Outputs:
+
+  oTemplateVersion:
+    Description: 'Template version'
+    Value: '1.0.0'

@@ -1,0 +1,18 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DenyMemberAccountInstances",
+            "Effect": "Deny",
+            "Action": "sso:CreateInstance",
+            "Resource": "*",
+            "Condition": {
+                "StringNotEquals": {
+                    "aws:PrincipalAccount": [
+                        "<ALLOWED-ACCOUNT-ID>"
+                    ]
+                }
+            }
+        }
+    ]
+}
