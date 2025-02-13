@@ -12,6 +12,8 @@
 - `deny-root-user-actions.yaml`
     - Prevent the root user from performing any actions
     - **Note**: this does not apply to AWS Organization management account root user
+- `deny-sts-get-federation-token.yaml`
+    - Deny `sts:GetFederationToken` Operation
 - `restrict-region-to-us-east-1.yaml`
     - Deny access to all AWS regions except 'us-east-1'
 
