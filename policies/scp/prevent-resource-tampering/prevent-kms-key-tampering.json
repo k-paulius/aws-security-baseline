@@ -1,0 +1,47 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PreventKMSKeyTampering",
+            "Effect": "Deny",
+            "Action": [
+                "kms:ScheduleKeyDeletion",
+                "kms:DisableKey",
+                "kms:DisableKeyRotation",
+                "kms:EnableKeyRotation",
+                "kms:PutKeyPolicy",
+                "kms:UpdateKeyDescription",
+                "kms:TagResource",
+                "kms:UntagResource"
+            ],
+            "Resource": [
+                "arn:aws:kms:<REGION>:<ACCOUNT_ID>:key/<KEY_ID>"
+            ],
+            "Condition": {
+                "ArnNotLike": {
+                    "aws:PrincipalArn": [
+                        "arn:aws:iam::*:role/[AUTOMATION_ROLE]"
+                    ]
+                }
+            }
+        },
+        {
+            "Sid": "PreventKMSAliasTampering",
+            "Effect": "Deny",
+            "Action": [
+                "kms:DeleteAlias",
+                "kms:UpdateAlias"
+            ],
+            "Resource": [
+                "arn:aws:kms:<REGION>:<ACCOUNT_ID>:alias/<KEY_ALIAS>"
+            ],
+            "Condition": {
+                "ArnNotLike": {
+                    "aws:PrincipalArn": [
+                        "arn:aws:iam::*:role/[AUTOMATION_ROLE]"
+                    ]
+                }
+            }
+        }
+    ]
+}

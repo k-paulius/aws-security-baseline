@@ -1,0 +1,26 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PreventAccessAnalyzerTampering",
+            "Effect": "Deny",
+            "Action": [
+                "access-analyzer:CreateAnalyzer",
+                "access-analyzer:DeleteAnalyzer",
+                "access-analyzer:CreateArchiveRule",
+                "access-analyzer:UpdateArchiveRule",
+                "access-analyzer:ApplyArchiveRule",
+                "access-analyzer:TagResource",
+                "access-analyzer:UntagResource"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "ArnNotLike": {
+                    "aws:PrincipalArn": [
+                        "arn:aws:iam::*:role/[AUTOMATION_ROLE]"
+                    ]
+                }
+            }
+        }
+    ]
+}

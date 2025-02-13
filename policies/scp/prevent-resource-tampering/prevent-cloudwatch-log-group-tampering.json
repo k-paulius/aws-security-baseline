@@ -1,0 +1,45 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PreventCloudWatchLogGroupTampering",
+            "Effect": "Deny",
+            "Action": [
+                "logs:DeleteLogGroup",
+                "logs:DeleteLogStream",
+                "logs:AssociateKmsKey",
+                "logs:DisassociateKmsKey",
+                "logs:PutRetentionPolicy",
+                "logs:DeleteRetentionPolicy"
+            ],
+            "Resource": [
+                "arn:aws:logs:<REGION>:<ACCOUNT_ID>:log-group:<LOG_GROUP_NAME>:*"
+            ],
+            "Condition": {
+                "ArnNotLike": {
+                    "aws:PrincipalArn": [
+                        "arn:aws:iam::*:role/[AUTOMATION_ROLE]"
+                    ]
+                }
+            }
+        },
+        {
+            "Sid": "PreventCloudWatchLogGroupTagTampering",
+            "Effect": "Deny",
+            "Action": [
+                "logs:TagResource",
+                "logs:UntagResource"
+            ],
+            "Resource": [
+                "arn:aws:logs:<REGION>:<ACCOUNT_ID>:log-group:<LOG_GROUP_NAME>"
+            ],
+            "Condition": {
+                "ArnNotLike": {
+                    "aws:PrincipalArn": [
+                        "arn:aws:iam::*:role/[AUTOMATION_ROLE]"
+                    ]
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,29 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PreventCloudTrailTrailTampering",
+            "Effect": "Deny",
+            "Action": [
+                "cloudtrail:AddTags",
+                "cloudtrail:RemoveTags",
+                "cloudtrail:DeleteTrail",
+                "cloudtrail:UpdateTrail",
+                "cloudtrail:StopLogging",
+                "cloudtrail:StartLogging",
+                "cloudtrail:PutEventSelectors",
+                "cloudtrail:PutInsightSelectors"
+            ],
+            "Resource": [
+                "arn:aws:cloudtrail:<REGION>:<ACCOUNT_ID>:trail/<TRAIL_NAME>"
+            ],
+            "Condition": {
+                "ArnNotLike": {
+                    "aws:PrincipalArn": [
+                        "arn:aws:iam::*:role/[AUTOMATION_ROLE]"
+                    ]
+                }
+            }
+        }
+    ]
+}

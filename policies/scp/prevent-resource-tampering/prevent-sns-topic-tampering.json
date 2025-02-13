@@ -1,0 +1,29 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PreventSNSTopicTampering",
+            "Effect": "Deny",
+            "Action": [
+                "sns:DeleteTopic",
+                "sns:AddPermission",
+                "sns:RemovePermission",
+                "sns:SetTopicAttributes",
+                "sns:Subscribe",
+                "sns:Unsubscribe",
+                "sns:TagResource",
+                "sns:UntagResource"
+            ],
+            "Resource": [
+                "arn:aws:sns:<REGION>:<ACCOUNT_ID>:<SNS_TOPIC_NAME>"
+            ],
+            "Condition": {
+                "ArnNotLike": {
+                    "aws:PrincipalArn": [
+                        "arn:aws:iam::*:role/[AUTOMATION_ROLE]"
+                    ]
+                }
+            }
+        }
+    ]
+}

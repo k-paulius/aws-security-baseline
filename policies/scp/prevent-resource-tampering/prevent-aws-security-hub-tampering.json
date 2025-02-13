@@ -1,0 +1,46 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PreventSecurityHubTampering",
+            "Effect": "Deny",
+            "Action": [
+                "securityhub:CreateMembers",
+                "securityhub:InviteMembers",
+                "securityhub:AcceptAdministratorInvitation",
+                "securityhub:AcceptInvitation",
+                "securityhub:DeclineInvitations",
+                "securityhub:DeleteInvitations",
+                "securityhub:DisassociateMembers",
+                "securityhub:DeleteMembers",
+                "securityhub:DisassociateFromAdministratorAccount",
+                "securityhub:DisassociateFromMasterAccount",
+                "securityhub:DisableSecurityHub",
+                "securityhub:DisableImportFindingsForProduct",
+                "securityhub:DeleteFindingAggregator",
+                "securityhub:UpdateFindingAggregator",
+                "securityhub:BatchDisableStandards",
+                "securityhub:BatchUpdateStandardsControlAssociations",
+                "securityhub:UpdateStandardsControl",
+                "securityhub:UpdateSecurityControl",
+                "securityhub:CreateAutomationRule",
+                "securityhub:BatchDeleteAutomationRules",
+                "securityhub:BatchUpdateAutomationRules",
+                "securityhub:DeleteConfigurationPolicy",
+                "securityhub:UpdateConfigurationPolicy",
+                "securityhub:StartConfigurationPolicyAssociation",
+                "securityhub:StartConfigurationPolicyDisassociation",
+                "securityhub:TagResource",
+                "securityhub:UntagResource"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "ArnNotLike": {
+                    "aws:PrincipalArn": [
+                        "arn:aws:iam::*:role/[AUTOMATION_ROLE]"
+                    ]
+                }
+            }
+        }
+    ]
+}
