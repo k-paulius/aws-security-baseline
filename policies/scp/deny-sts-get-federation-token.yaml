@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'SCP: Deny STS GetFederationToken Operation'
+
+Parameters:
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rDenySTSGetFederationTokenSCP:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: 'DenySTSGetFederationToken'
+      Description: 'Deny STS GetFederationToken Operation'
+      Content:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyGetFederationToken
+            Effect: Deny
+            Action: 'sts:GetFederationToken'
+            Resource: '*'
+            Principal: '*'
+      TargetIds:
+        - !Ref pTargetIds
