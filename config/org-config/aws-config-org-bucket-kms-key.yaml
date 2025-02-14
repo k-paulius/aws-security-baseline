@@ -89,14 +89,14 @@ Outputs:
     Description: 'AWS Config History Bucket KMS Key ARN'
     Value: !GetAtt rConfigBucketKey.Arn
     Export:
-      Name: !Sub '${pConfigBucketKeyAlias}-arn'
+      Name: !Sub '${AWS::StackName}-arn'
 
   oConfigBucketKeyAliasName:
     Description: 'AWS Config History Bucket KMS Key Alias Name'
     Value: !Ref rConfigBucketKeyAlias
     Export:
-      Name: !Sub '${pConfigBucketKeyAlias}-alias-name'
+      Name: !Sub '${AWS::StackName}-alias-name'
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.0'
+    Value: '1.0.1'

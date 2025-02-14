@@ -87,14 +87,14 @@ Outputs:
     Description: 'KMS Key ARN'
     Value: !GetAtt rBucketKey.Arn
     Export:
-      Name: !Sub '${pKeyAlias}-arn'
+      Name: !Sub '${AWS::StackName}-arn'
 
   oBucketKeyAliasName:
     Description: 'KMS Key Alias Name'
     Value: !Ref rBucketKeyAlias
     Export:
-      Name: !Sub '${pKeyAlias}-alias-name'
+      Name: !Sub '${AWS::StackName}-alias-name'
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.0'
+    Value: '1.0.1'
