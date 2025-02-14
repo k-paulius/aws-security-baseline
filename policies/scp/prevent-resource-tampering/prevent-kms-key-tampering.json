@@ -15,6 +15,7 @@
                 "kms:UntagResource"
             ],
             "Resource": [
+                "arn:aws:kms:<REGION>:<ACCOUNT_ID>:key/<KEY_ID>",
                 "arn:aws:kms:<REGION>:<ACCOUNT_ID>:key/<KEY_ID>"
             ],
             "Condition": {
@@ -33,6 +34,7 @@
                 "kms:UpdateAlias"
             ],
             "Resource": [
+                "arn:aws:kms:<REGION>:<ACCOUNT_ID>:alias/<KEY_ALIAS>",
                 "arn:aws:kms:<REGION>:<ACCOUNT_ID>:alias/<KEY_ALIAS>"
             ],
             "Condition": {

@@ -8,13 +8,13 @@ Parameters:
     Type: String
     Default: 'PreventKMSKeyTampering'
 
-  pKMSKeyArn:
-    Description: 'AWS KMS Key ARN'
-    Type: String
+  pKMSKeyArns:
+    Description: 'AWS KMS Key ARN(s)'
+    Type: CommaDelimitedList
 
-  pKMSKeyAliasArn:
-    Description: 'AWS KMS Key Alias ARN'
-    Type: String
+  pKMSKeyAliasArns:
+    Description: 'AWS KMS Key Alias ARN(s)'
+    Type: CommaDelimitedList
 
   pTargetIds:
     Type: String
@@ -44,7 +44,7 @@ Resources:
               - 'kms:TagResource'
               - 'kms:UntagResource'
             Resource:
-              - !Ref pKMSKeyArn
+              !Ref pKMSKeyArns
             Condition:
               ArnNotLike:
                 'aws:PrincipalArn':
@@ -55,7 +55,7 @@ Resources:
               - 'kms:DeleteAlias'
               - 'kms:UpdateAlias'
             Resource:
-              - !Ref pKMSKeyAliasArn
+              !Ref pKMSKeyAliasArns
             Condition:
               ArnNotLike:
                 'aws:PrincipalArn':
@@ -67,4 +67,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.1'
+    Value: '1.0.2'
