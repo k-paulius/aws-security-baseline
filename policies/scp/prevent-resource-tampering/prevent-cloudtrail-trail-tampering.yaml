@@ -8,9 +8,9 @@ Parameters:
     Type: String
     Default: 'PreventCloudTrailTrailTampering'
 
-  pCloudTrailTrailArn:
-    Description: 'AWS CloudTrail Trail ARN'
-    Type: String
+  pCloudTrailTrailArns:
+    Description: 'AWS CloudTrail Trail ARN(s)'
+    Type: CommaDelimitedList
 
   pTargetIds:
     Type: String
@@ -40,7 +40,7 @@ Resources:
               - 'cloudtrail:PutEventSelectors'
               - 'cloudtrail:PutInsightSelectors'
             Resource:
-              - !Ref pCloudTrailTrailArn
+              - !Ref pCloudTrailTrailArns
             Condition:
               ArnNotLike:
                 'aws:PrincipalArn':
@@ -52,4 +52,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.1'
+    Value: '1.0.2'
