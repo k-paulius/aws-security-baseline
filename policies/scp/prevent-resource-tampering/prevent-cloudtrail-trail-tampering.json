@@ -15,6 +15,7 @@
                 "cloudtrail:PutInsightSelectors"
             ],
             "Resource": [
+                "arn:aws:cloudtrail:<REGION>:<ACCOUNT_ID>:trail/<TRAIL_NAME>",
                 "arn:aws:cloudtrail:<REGION>:<ACCOUNT_ID>:trail/<TRAIL_NAME>"
             ],
             "Condition": {

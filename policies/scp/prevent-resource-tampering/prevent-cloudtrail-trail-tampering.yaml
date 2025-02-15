@@ -40,7 +40,7 @@ Resources:
               - 'cloudtrail:PutEventSelectors'
               - 'cloudtrail:PutInsightSelectors'
             Resource:
-              - !Ref pCloudTrailTrailArns
+              !Ref pCloudTrailTrailArns
             Condition:
               ArnNotLike:
                 'aws:PrincipalArn':
