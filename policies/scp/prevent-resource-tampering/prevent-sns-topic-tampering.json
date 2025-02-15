@@ -15,6 +15,7 @@
                 "sns:UntagResource"
             ],
             "Resource": [
+                "arn:aws:sns:<REGION>:<ACCOUNT_ID>:<SNS_TOPIC_NAME>",
                 "arn:aws:sns:<REGION>:<ACCOUNT_ID>:<SNS_TOPIC_NAME>"
             ],
             "Condition": {

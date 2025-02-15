@@ -8,9 +8,9 @@ Parameters:
     Type: String
     Default: 'PreventSNSTopicTampering'
 
-  pSNSTopicArn:
-    Description: 'Amazon SNS Topic ARN'
-    Type: String
+  pSNSTopicArns:
+    Description: 'Amazon SNS Topic ARN(s)'
+    Type: CommaDelimitedList
 
   pTargetIds:
     Type: String
@@ -40,7 +40,7 @@ Resources:
               - 'sns:TagResource'
               - 'sns:UntagResource'
             Resource:
-              - !Ref pSNSTopicArn
+              - !Ref pSNSTopicArns
             Condition:
               ArnNotLike:
                 'aws:PrincipalArn':
