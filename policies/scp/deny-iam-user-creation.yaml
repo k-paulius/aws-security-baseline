@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'SCP: Deny IAM User Creation'
+
+Parameters:
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rDenyIAMUserCreationSCP:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: SERVICE_CONTROL_POLICY
+      Name: 'DenyIAMUserCreation'
+      Description: 'Deny IAM User Creation'
+      Content:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PreventIAMUserCreation
+            Effect: Deny
+            Action:
+              - 'iam:CreateUser'
+              - 'iam:CreateAccessKey'
+              - 'iam:CreateLoginProfile'
+            Resource: '*'
+      TargetIds:
+        - !Ref pTargetIds
