@@ -23,6 +23,5 @@ Resources:
             Effect: Deny
             Action: 'sts:GetFederationToken'
             Resource: '*'
-            Principal: '*'
       TargetIds:
         - !Ref pTargetIds

@@ -5,8 +5,7 @@
             "Sid": "DenyGetFederationToken",
             "Effect": "Deny",
             "Action": "sts:GetFederationToken",
-            "Resource": "*",
-            "Principal": "*"
+            "Resource": "*"
         }
     ]
 }
