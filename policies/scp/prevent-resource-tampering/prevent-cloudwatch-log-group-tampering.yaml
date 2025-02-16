@@ -8,11 +8,9 @@ Parameters:
     Type: String
     Default: 'PreventCloudWatchLogGroupTampering'
 
-  pCloudWatchLogsLogGroupArn:
-    Description: 'Amazon CloudWatch Logs Log Group ARN. (Example: arn:aws:logs:us-east-1:123456789012:log-group:group-name:*)'
+  pCloudWatchLogsLogGroupArns:
+    Description: 'Comma separated list of Amazon CloudWatch Logs Log Group ARN(s). (Example: arn:aws:logs:us-east-1:123456789012:log-group:group-name:*)'
     Type: String
-    AllowedPattern: '^arn:[a-z0-9-]+:logs:[a-z0-9-]+:\d{12}:log-group:[a-zA-Z0-9_\-\/.$]+:\*$'
-    ConstraintDescription: 'Must provide a valid Log Group ARN. Example: arn:aws:logs:us-east-1:123456789012:log-group:group-name:*'
 
   pTargetIds:
     Type: String
@@ -40,7 +38,7 @@ Resources:
               - 'logs:PutRetentionPolicy'
               - 'logs:DeleteRetentionPolicy'
             Resource:
-              - !Ref pCloudWatchLogsLogGroupArn
+              !Split [ ',', !Ref pCloudWatchLogsLogGroupArns ]
             Condition:
               ArnNotLike:
                 'aws:PrincipalArn':
@@ -51,18 +49,8 @@ Resources:
               - 'logs:TagResource'
               - 'logs:UntagResource'
             Resource:
-              - !Join [
-                  ':',
-                  [
-                    !Select [0, !Split [':', !Ref pCloudWatchLogsLogGroupArn]],
-                    !Select [1, !Split [':', !Ref pCloudWatchLogsLogGroupArn]],
-                    !Select [2, !Split [':', !Ref pCloudWatchLogsLogGroupArn]],
-                    !Select [3, !Split [':', !Ref pCloudWatchLogsLogGroupArn]],
-                    !Select [4, !Split [':', !Ref pCloudWatchLogsLogGroupArn]],
-                    !Select [5, !Split [':', !Ref pCloudWatchLogsLogGroupArn]],
-                    !Select [6, !Split [':', !Ref pCloudWatchLogsLogGroupArn]]
-                  ]
-                ]
+              # remove the trailing (:*) from the ARN(s)
+              !Split [ ',', !Join [ '', !Split [ ':*', !Ref pCloudWatchLogsLogGroupArns ]]]
             Condition:
               ArnNotLike:
                 'aws:PrincipalArn':
