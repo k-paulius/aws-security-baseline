@@ -8,8 +8,8 @@ Parameters:
     Type: String
     Default: 'PreventS3BucketTampering'
 
-  pS3BucketArn:
-    Description: 'Amazon S3 Bucket ARN. (Example: arn:aws:s3:::bucket-name)'
+  pS3BucketArns:
+    Description: 'Comma separated list of Amazon S3 Bucket ARN(s) (e.g.arn:aws:s3:::bucket-name,arn:aws:s3:::bucket-name)'
     Type: String
 
   pTargetIds:
@@ -50,7 +50,8 @@ Resources:
               - 's3:PutBucketVersioning'
               - 's3:PutBucketObjectLockConfiguration'
             Resource:
-              - !Sub '${pS3BucketArn}*'
+              # append (*) to each S3 bucket ARN in the list
+              !Split [ '|', !Join [ '', [ !Join [ '*|', !Split [ ',', !Ref pS3BucketArns ] ], '*' ]]]
             Condition:
               ArnNotLike:
                 'aws:PrincipalArn':
@@ -61,7 +62,8 @@ Resources:
               - 's3:DeleteObject'
               - 's3:DeleteObjectVersion'
             Resource:
-              - !Sub '${pS3BucketArn}/*'
+              # append (/*) to each S3 bucket ARN in the list
+              !Split [ '|', !Join [ '', [ !Join [ '/*|', !Split [ ',', !Ref pS3BucketArns ] ], '/*'] ]]
       TargetIds:
         - !Ref pTargetIds
 
@@ -69,4 +71,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.1'
+    Value: '1.0.2'

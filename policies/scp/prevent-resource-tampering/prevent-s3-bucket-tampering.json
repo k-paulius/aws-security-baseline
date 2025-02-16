@@ -25,6 +25,7 @@
                 "s3:PutBucketObjectLockConfiguration"
             ],
             "Resource": [
+                "arn:aws:s3:::<BUCKET_NAME>*",
                 "arn:aws:s3:::<BUCKET_NAME>*"
             ],
             "Condition": {
@@ -43,6 +44,7 @@
                 "s3:DeleteObjectVersion"
             ],
             "Resource": [
+                "arn:aws:s3:::<BUCKET_NAME>/*",
                 "arn:aws:s3:::<BUCKET_NAME>/*"
             ]
         }
