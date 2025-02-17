@@ -251,6 +251,71 @@ Resources:
               Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
           - !Ref 'AWS::NoValue'
 
+  rOrgSecAlertsSTSRule:
+    Type: AWS::Events::Rule
+    Condition: cDeployAlerts
+    Properties:
+      Name: 'org-sec-alerts-sts-rule'
+      Description: 'Listens for events from the "sts" event source'
+      EventBusName: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-event-bus-arn'}
+      State: ENABLED
+      EventPattern:
+        source:
+          - 'aws.sts'
+        detail-type:
+          - 'AWS API Call via CloudTrail'
+        detail:
+          userIdentity:
+            type:
+              # do not generate alert for sts:AssumeRoot event in the target account
+              - anything-but: 'AWSAccount'
+          eventName:
+            - 'AssumeRoot'
+      Targets:
+        - !If
+          - cDeployEmailAlerts
+          - Id: 'CriticalOrgSecEmailAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-email-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+            InputTransformer:
+              InputPathsMap:
+                accountId: $.detail.userIdentity.accountId
+                arn: $.detail.userIdentity.arn
+                awsRegion: $.detail.awsRegion
+                eventID: $.detail.eventID
+                eventName: $.detail.eventName
+                eventTime: $.detail.eventTime
+                principalId: $.detail.userIdentity.principalId
+                sourceIPAddress: $.detail.sourceIPAddress
+                userAgent: $.detail.userAgent
+                userIdentityType: $.detail.userIdentity.type
+                accessKeyId: $.detail.userIdentity.accessKeyId
+                eventSource: $.detail.eventSource
+                recipientAccountId: $.detail.recipientAccountId
+              InputTemplate: |
+                "----- ALERT | USER: <userIdentityType> | EVENT: sts:<eventName> -----"
+
+                "Account Id.........: <accountId>"
+                "ARN................: <arn>"
+                "Principal Id.......: <principalId>"
+                "Access Key Id......: <accessKeyId>"
+                "Event Time.........: <eventTime>"
+                "Region.............: <awsRegion>"
+                "IP Address.........: <sourceIPAddress>"
+                "User Agent.........: <userAgent>"
+                "Event Source.......: <eventSource>"
+                "CloudTrail Event ID: <eventID>"
+                "Assume Root Target.: <recipientAccountId>"
+          - !Ref 'AWS::NoValue'
+        - !If
+          - cDeploySlackAlerts
+          - Id: 'CriticalOrgSecSlackAlertsSNSTopic'
+            Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-crit-slack-sns-arn'}
+            DeadLetterConfig:
+              Arn: {'Fn::ImportValue': !Sub '${pCentralBusStackName}-dlq-sqs-arn'}
+          - !Ref 'AWS::NoValue'
+
   rOrgSecAlertsAccountRule:
     Type: AWS::Events::Rule
     Condition: cDeployAlerts
@@ -410,4 +475,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.2'
+    Value: '1.0.3'

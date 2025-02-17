@@ -51,6 +51,8 @@ Currently monitored and alerted activities:
   - `iam:UploadSigningCertificate`
   - `iam:DeleteSigningCertificate`
   - `iam:UpdateSigningCertificate`
+- Root user assumption
+  - `sts:AssumeRoot`
 - Account contact information change: phone number, address, name (`org-sec-alerts-general-alerts.yaml`)
   - `account:PutContactInformation`
 - AWS Organizations configuration changes (`org-sec-alerts-general-alerts.yaml`)
