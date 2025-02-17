@@ -53,6 +53,9 @@ Currently monitored and alerted activities:
   - `iam:UpdateSigningCertificate`
 - Root user assumption
   - `sts:AssumeRoot`
+- Root user/account email address updates
+  - `account:StartPrimaryEmailUpdate`
+  - `account:AcceptPrimaryEmailUpdate`
 - Account contact information change: phone number, address, name (`org-sec-alerts-general-alerts.yaml`)
   - `account:PutContactInformation`
 - AWS Organizations configuration changes (`org-sec-alerts-general-alerts.yaml`)

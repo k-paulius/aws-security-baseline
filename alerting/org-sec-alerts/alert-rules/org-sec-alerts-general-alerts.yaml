@@ -332,6 +332,8 @@ Resources:
         detail:
           eventName:
             - 'PutContactInformation'
+            - 'StartPrimaryEmailUpdate'
+            - 'AcceptPrimaryEmailUpdate'
       Targets:
         - !If
           - cDeployEmailAlerts
@@ -475,4 +477,4 @@ Outputs:
 
   oTemplateVersion:
     Description: 'Template version'
-    Value: '1.0.3'
+    Value: '1.0.4'
