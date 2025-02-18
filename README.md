@@ -49,6 +49,9 @@
         - `scripts`
             - AWS IAM Access Analyzer related scripts
             - [Readme](iam/access-analyzer/scripts/README.md)
+    - `scripts`
+        - AWS Identity and Access Management (IAM) related scripts
+        - [Readme](iam/scripts/README.md)
 - `policies`
     - [Readme](policies/README.md)
 - `s3`
