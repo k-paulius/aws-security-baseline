@@ -5,8 +5,15 @@
 - `ai-opt-out.yaml`
     - AI services opt-out policy that opt-outs of all AI services
 
+## Chatbot policies
+
+- `chatbot-disable-all-clients.yaml`
+    - Chatbot policy that disables all Chatbot clients
+
 ## Service control policies (SCPs)
 
+- `deny-iam-user-creation.yaml`
+    - Prevent creation of IAM users, access keys or login profiles
 - `deny-leave-organization.yaml`
     - Prevent AWS organization member accounts from leaving the organization
 - `deny-root-user-actions.yaml`

@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Chatbot Policy: Disable all clients'
+
+Parameters:
+
+  pTargetIds:
+    Type: String
+
+Resources:
+
+  rChatbotPolicy:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Properties:
+      Type: CHATBOT_POLICY
+      Name: 'ChatbotDisableAllClients'
+      Description: 'Disable all Chatbot clients'
+      Content:
+        chatbot:
+          platforms:
+            chime:
+              client:
+                '@@assign': disabled
+            slack:
+              client:
+                '@@assign': disabled
+            microsoft_teams:
+              client:
+                '@@assign': disabled
+          default:
+            client:
+              '@@assign': disabled
+      TargetIds:
+        - !Ref pTargetIds
